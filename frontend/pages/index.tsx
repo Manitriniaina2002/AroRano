@@ -1,20 +1,27 @@
+'use client';
+
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { api, HealthResponse, WelcomeResponse } from '@/lib/api';
+import { colors, spacing, styles } from '@/lib/theme';
+import { t, getLanguage } from '@/lib/i18n';
+import { AppHeader } from '@/components/AppHeader';
+import { FiArrowRight, FiCheckCircle, FiAlertCircle, FiLoader } from 'react-icons/fi';
 
 export default function Home() {
   const [health, setHealth] = useState<HealthResponse | null>(null);
   const [message, setMessage] = useState<WelcomeResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [language, setLanguage] = useState('en');
 
   useEffect(() => {
+    setLanguage(getLanguage());
     const fetchData = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        // Fetch health and welcome message
         const [healthData, messageData] = await Promise.all([
           api.health(),
           api.welcome(),
@@ -23,7 +30,7 @@ export default function Home() {
         setHealth(healthData);
         setMessage(messageData);
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to fetch data';
+        const errorMessage = err instanceof Error ? err.message : t('common.error', language as 'en' | 'mg');
         setError(errorMessage);
         console.error('API Error:', err);
       } finally {
@@ -32,89 +39,244 @@ export default function Home() {
     };
 
     fetchData();
-  }, []);
+  }, [language]);
 
   return (
-    <div style={{ padding: '40px', fontFamily: 'sans-serif', maxWidth: '800px', margin: '0 auto' }}>
-      <h1>🚀 AroRano</h1>
-      <p>IoT Device Management & Monitoring Platform</p>
+    <div style={{ backgroundColor: colors.background, minHeight: '100vh' }}>
+      <AppHeader title={t('home.title')} />
 
-      <hr style={{ margin: '30px 0' }} />
-
-      {loading && (
-        <div style={{ padding: '20px', backgroundColor: '#e3f2fd', borderRadius: '4px' }}>
-          ⏳ Loading data from API...
-        </div>
-      )}
-
-      {error && (
-        <div style={{ padding: '20px', backgroundColor: '#ffebee', borderRadius: '4px', color: '#c62828' }}>
-          ❌ Error: {error}
-        </div>
-      )}
-
-      {!loading && !error && (
-        <>
-          <div style={{ marginBottom: '20px' }}>
-            <h2>✨ Welcome Message</h2>
-            <p style={{ fontSize: '18px', color: '#1976d2' }}>
-              {message?.message || 'No message'}
+      <main>
+        {/* Hero Section */}
+        <section
+          style={{
+            backgroundColor: colors.primary,
+            color: '#ffffff',
+            padding: `${spacing.xxl} ${spacing.md}`,
+            textAlign: 'center',
+          }}
+        >
+          <div
+            style={{
+              maxWidth: '600px',
+              margin: '0 auto',
+            }}
+          >
+            <h2
+              style={{
+                fontSize: '36px',
+                fontWeight: '700',
+                marginBottom: `${spacing.md}`,
+              }}
+            >
+              {t('home.title')}
+            </h2>
+            <p
+              style={{
+                fontSize: '18px',
+                marginBottom: `${spacing.lg}`,
+                opacity: 0.95,
+              }}
+            >
+              {t('home.subtitle')}
             </p>
           </div>
+        </section>
 
-          <div style={{ marginBottom: '30px' }}>
-            <h2>💚 Server Status</h2>
-            <div style={{ padding: '15px', backgroundColor: '#f5f5f5', borderRadius: '4px' }}>
-              <p>
-                <strong>Status:</strong> <span style={{ color: '#4caf50' }}>{health?.status}</span>
-              </p>
-              <p>
-                <strong>Message:</strong> {health?.message}
-              </p>
-            </div>
+        {/* Main Content */}
+        <div style={{ ...styles.container, paddingTop: `${spacing.xl}`, paddingBottom: `${spacing.xl}` }}>
+          {/* Status Section */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+              gap: `${spacing.lg}`,
+              marginBottom: `${spacing.xl}`,
+            }}
+          >
+            {loading && (
+              <div
+                style={{
+                  ...styles.card,
+                  backgroundColor: colors.primaryLight,
+                  borderLeft: `4px solid ${colors.primary}`,
+                  display: 'flex',
+                  gap: `${spacing.md}`,
+                  alignItems: 'flex-start',
+                }}
+              >
+                <FiLoader
+                  size={24}
+                  style={{
+                    color: colors.primary,
+                    flexShrink: 0,
+                    animation: 'spin 1s linear infinite',
+                  }}
+                />
+                <div>
+                  <h3 style={{ margin: `0 0 ${spacing.sm} 0`, fontSize: '16px' }}>
+                    {t('common.loading')}
+                  </h3>
+                  <p style={{ margin: 0, fontSize: '14px', opacity: 0.8 }}>
+                    {t('home.subtitle')}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {error && !loading && (
+              <div
+                style={{
+                  ...styles.card,
+                  backgroundColor: colors.dangerLight,
+                  borderLeft: `4px solid ${colors.danger}`,
+                  display: 'flex',
+                  gap: `${spacing.md}`,
+                  alignItems: 'flex-start',
+                }}
+              >
+                <FiAlertCircle
+                  size={24}
+                  style={{
+                    color: colors.danger,
+                    flexShrink: 0,
+                  }}
+                />
+                <div>
+                  <h3 style={{ margin: `0 0 ${spacing.sm} 0`, fontSize: '16px', color: colors.danger }}>
+                    {t('common.error')}
+                  </h3>
+                  <p style={{ margin: 0, fontSize: '14px', color: colors.danger }}>{error}</p>
+                </div>
+              </div>
+            )}
+
+            {!loading && !error && message && (
+              <div
+                style={{
+                  ...styles.card,
+                  backgroundColor: colors.primaryLight,
+                  borderLeft: `4px solid ${colors.primary}`,
+                }}
+              >
+                <h3 style={{ margin: `0 0 ${spacing.md} 0`, color: colors.primary }}>
+                  {t('home.welcome')}
+                </h3>
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: '16px',
+                    color: colors.primary,
+                    fontWeight: '500',
+                  }}
+                >
+                  {message.message}
+                </p>
+              </div>
+            )}
+
+            {!loading && !error && health && (
+              <div
+                style={{
+                  ...styles.card,
+                  backgroundColor: colors.successLight,
+                  borderLeft: `4px solid ${colors.success}`,
+                }}
+              >
+                <div style={{ display: 'flex', gap: `${spacing.md}`, alignItems: 'flex-start' }}>
+                  <FiCheckCircle size={24} style={{ color: colors.success, flexShrink: 0 }} />
+                  <div style={{ flex: 1 }}>
+                    <h3 style={{ margin: `0 0 ${spacing.md} 0`, color: colors.success }}>
+                      {t('home.serverStatus')}
+                    </h3>
+                    <div
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: '1fr 1fr',
+                        gap: `${spacing.md}`,
+                      }}
+                    >
+                      <div>
+                        <p style={{ margin: 0, fontSize: '12px', color: colors.gray500, marginBottom: '4px' }}>
+                          {t('common.status')}
+                        </p>
+                        <p style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: colors.text }}>
+                          {health.status}
+                        </p>
+                      </div>
+                      <div>
+                        <p style={{ margin: 0, fontSize: '12px', color: colors.gray500, marginBottom: '4px' }}>
+                          {t('common.value')}
+                        </p>
+                        <p style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: colors.text }}>
+                          {health.message}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
-          <div style={{ 
-            padding: '20px', 
-            backgroundColor: '#e8f5e9', 
-            borderRadius: '8px',
-            marginBottom: '20px',
-            borderLeft: '4px solid #4caf50'
-          }}>
-            <h3 style={{ marginTop: 0 }}>📊 IoT Monitoring Dashboard</h3>
-            <p>Manage and monitor your connected IoT devices, view sensor readings, and track device statistics.</p>
+          {/* Dashboard CTA */}
+          <div
+            style={{
+              ...styles.card,
+              backgroundColor: colors.primaryLight,
+              border: `2px solid ${colors.primary}`,
+              textAlign: 'center',
+            }}
+          >
+            <h2
+              style={{
+                margin: `0 0 ${spacing.md} 0`,
+                fontSize: '28px',
+                fontWeight: '600',
+                color: colors.primary,
+              }}
+            >
+              {t('home.dashboard')}
+            </h2>
+            <p
+              style={{
+                margin: `0 0 ${spacing.lg} 0`,
+                fontSize: '16px',
+                color: colors.gray700,
+                lineHeight: '1.6',
+              }}
+            >
+              {t('home.dashboardDescription')}
+            </p>
             <Link href="/dashboard">
-              <a style={{
-                display: 'inline-block',
-                padding: '10px 20px',
-                backgroundColor: '#4caf50',
-                color: '#fff',
-                textDecoration: 'none',
-                borderRadius: '4px',
-                fontWeight: 'bold',
-              }}>
-                → Go to Dashboard
-              </a>
+              <button
+                style={{
+                  ...styles.buttonPrimary,
+                  display: 'inline-flex',
+                  gap: `${spacing.sm}`,
+                  fontSize: '16px',
+                  padding: `${spacing.md} ${spacing.lg}`,
+                }}
+              >
+                {t('home.goToDashboard')}
+                <FiArrowRight size={18} />
+              </button>
             </Link>
           </div>
+        </div>
+      </main>
 
-          <div style={{ marginTop: '30px', fontSize: '14px', color: '#666' }}>
-            <h3>📚 Resources</h3>
-            <ul>
-              <li>
-                <a href="http://localhost:3001/api/docs" target="_blank" rel="noopener noreferrer">
-                  Swagger API Documentation
-                </a>
-              </li>
-              <li>
-                <a href="http://localhost:3001/api/health" target="_blank" rel="noopener noreferrer">
-                  API Health Check
-                </a>
-              </li>
-            </ul>
-          </div>
-        </>
-      )}
+      <style>{`
+        @keyframes spin {
+          to {
+            transform: rotate(360deg);
+          }
+        }
+        
+        button:hover {
+          opacity: 0.9;
+          transform: translateY(-2px);
+        }
+      `}</style>
     </div>
   );
 }
