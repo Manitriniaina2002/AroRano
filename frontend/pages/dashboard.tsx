@@ -3,17 +3,14 @@
 import React, { useEffect, useState } from 'react';
 import { api, Device, DeviceStats, SensorReading } from '@/lib/api';
 import { websocket, SensorReadingEvent } from '@/lib/websocket';
-import { colors, spacing, styles } from '@/lib/theme';
 import { t, getLanguage } from '@/lib/i18n';
-import { AppHeader } from '@/components/AppHeader';
+import { Layout } from '@/components/Layout';
 import {
   FiPlus,
   FiTrash2,
-  FiChevronRight,
   FiTrendingUp,
   FiAlertCircle,
   FiCheck,
-  FiXCircle,
   FiCloud,
   FiActivity,
   FiZap,
@@ -161,478 +158,237 @@ export default function DevicesDashboard() {
   const loadReadings = async (deviceId: string) => {
     try {
       const data = await api.devices.getReadings(deviceId);
-      setRealtimeReadings(data.slice(0, 20));
+      setRealtimeReadings(data);
     } catch (err) {
       console.error('Error loading readings:', err);
     }
   };
 
-  const handleAddDevice = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      await api.devices.create({
-        name: formData.name,
-        type: formData.type,
-        location: formData.location,
-        status: 'active',
-      });
-      setFormData({ name: '', type: 'temperature', location: '' });
-      setShowAddForm(false);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t('common.error', language as 'en' | 'mg'));
+  const handleAddDevice = async () => {
+    if (formData.name && formData.type && formData.location) {
+      try {
+        await api.devices.create(formData as any);
+        setFormData({ name: '', type: 'temperature', location: '' });
+        setShowAddForm(false);
+      } catch (err) {
+        console.error('Error creating device:', err);
+      }
     }
   };
 
   const handleDeleteDevice = async (deviceId: string) => {
-    if (!confirm(t('dashboard.confirmDelete', language as 'en' | 'mg'))) return;
-    try {
-      await api.devices.delete(deviceId);
-      setSelectedDevice(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t('common.error', language as 'en' | 'mg'));
+    if (window.confirm('Are you sure?')) {
+      try {
+        await api.devices.delete(deviceId);
+      } catch (err) {
+        console.error('Error deleting device:', err);
+      }
     }
   };
 
-  if (loading) {
-    return (
-      <div style={{ backgroundColor: colors.background, minHeight: '100vh' }}>
-        <AppHeader title={t('dashboard.title')} />
-        <div style={{ ...styles.container, padding: spacing.xl, textAlign: 'center' }}>
-          <p style={{ ...styles.text, color: colors.gray500 }}>{t('common.loading')}</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div style={{ backgroundColor: colors.background, minHeight: '100vh' }}>
-      <AppHeader title={t('dashboard.title')} />
-
-      <main style={styles.container}>
-        {/* Top Status Bar */}
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: spacing.lg,
-            flexWrap: 'wrap',
-            gap: spacing.md,
-          }}
-        >
-          <div style={{ display: 'flex', gap: spacing.md, alignItems: 'center' }}>
-            <span style={{ fontSize: '12px', fontWeight: '500', color: colors.gray500 }}>
-              {t('dashboard.websocketStatus')}
-            </span>
-            <div
-              style={{
-                display: 'flex',
-                gap: spacing.sm,
-                alignItems: 'center',
-                padding: `${spacing.sm} ${spacing.md}`,
-                backgroundColor: wsConnected ? colors.successLight : colors.dangerLight,
-                borderRadius: '6px',
-              }}
-            >
-              {wsConnected ? (
-                <>
-                  <FiCheck size={16} style={{ color: colors.success }} />
-                  <span style={{ fontSize: '12px', fontWeight: '500', color: colors.success }}>
-                    {t('dashboard.websocketConnected')}
-                  </span>
-                </>
-              ) : (
-                <>
-                  <FiXCircle size={16} style={{ color: colors.danger }} />
-                  <span style={{ fontSize: '12px', fontWeight: '500', color: colors.danger }}>
-                    {t('dashboard.websocketDisconnected')}
-                  </span>
-                </>
-              )}
-            </div>
+    <Layout title={t('dashboard.title')} showSidebar>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">{t('dashboard.title')}</h1>
+            <p className="text-gray-600 mt-1">
+              {t('dashboard.devices')} ({devices.length})
+            </p>
           </div>
+          <button
+            onClick={() => setShowAddForm(!showAddForm)}
+            className="btn-primary inline-flex items-center gap-2"
+          >
+            <FiPlus size={20} />
+            {t('dashboard.addDevice')}
+          </button>
         </div>
 
-        {error && (
-          <div
-            style={{
-              ...styles.alertDanger,
-              marginBottom: spacing.lg,
-              display: 'flex',
-              gap: spacing.md,
-              alignItems: 'flex-start',
-            }}
-          >
-            <FiAlertCircle size={20} style={{ flexShrink: 0 }} />
-            <div>
-              <p style={{ margin: 0 }}>{error}</p>
+        {/* Add Device Form */}
+        {showAddForm && (
+          <div className="card mb-8 border-l-4 border-primary-500">
+            <h3 className="text-lg font-semibold mb-4 text-gray-900">{t('dashboard.addDevice')}</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <input
+                type="text"
+                placeholder={t('dashboard.deviceName')}
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+              <select
+                value={formData.type}
+                onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              >
+                <option value="temperature">{t('deviceTypes.temperature')}</option>
+                <option value="humidity">{t('deviceTypes.humidity')}</option>
+                <option value="motion">{t('deviceTypes.motion')}</option>
+                <option value="pressure">{t('deviceTypes.pressure')}</option>
+                <option value="light">{t('deviceTypes.light')}</option>
+              </select>
+              <input
+                type="text"
+                placeholder={t('dashboard.location')}
+                value={formData.location}
+                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+            </div>
+            <div className="flex gap-2 mt-4">
+              <button onClick={handleAddDevice} className="btn-primary">
+                {t('dashboard.createDevice')}
+              </button>
+              <button onClick={() => setShowAddForm(false)} className="btn-secondary">
+                {t('dashboard.cancelAdd')}
+              </button>
             </div>
           </div>
         )}
 
-        {/* Main Grid - Responsive Layout */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-            gap: spacing.lg,
-            marginTop: spacing.lg,
-          }}
-        >
-          {/* Device List Column */}
-          <div
-            style={{
-              gridColumn: 'span 1',
-              backgroundColor: '#ffffff',
-              borderRadius: '8px',
-              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-              display: 'flex',
-              flexDirection: 'column',
-            }}
-          >
-            <div style={{ padding: spacing.lg, borderBottom: `1px solid ${colors.border}` }}>
-              <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '600' }}>
-                {t('dashboard.deviceCount', language as 'en' | 'mg').replace('{count}', devices.length.toString())}
-              </h2>
-            </div>
-
-            <div style={{ flex: 1, overflowY: 'auto', maxHeight: '500px', padding: spacing.md }}>
-              {devices.length === 0 ? (
-                <p style={{ ...styles.textMuted, textAlign: 'center', padding: spacing.lg }}>
-                  {t('dashboard.noDevices')}
-                </p>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.sm }}>
-                  {devices.map((device) => (
-                    <button
-                      key={device.id}
-                      onClick={() => setSelectedDevice(device)}
-                      style={{
-                        padding: spacing.md,
-                        backgroundColor: selectedDevice?.id === device.id ? colors.primary : colors.gray100,
-                        color: selectedDevice?.id === device.id ? '#ffffff' : colors.text,
-                        border: 'none',
-                        borderRadius: '6px',
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                        transition: 'all 0.2s ease',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: spacing.md,
-                      }}
-                      onMouseEnter={(e) => {
-                        if (selectedDevice?.id !== device.id) {
-                          e.currentTarget.style.backgroundColor = colors.gray200;
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (selectedDevice?.id !== device.id) {
-                          e.currentTarget.style.backgroundColor = colors.gray100;
-                        }
-                      }}
-                    >
-                      <div style={{ fontSize: '20px' }}>{deviceIcons[device.type] || <FiZap />}</div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: '600', fontSize: '14px' }}>{device.name}</div>
-                        <div
-                          style={{
-                            fontSize: '12px',
-                            opacity: 0.7,
-                            marginTop: '2px',
-                          }}
-                        >
-                          {device.location}
-                        </div>
-                        <div
-                          style={{
-                            fontSize: '11px',
-                            marginTop: '4px',
-                            display: 'inline-block',
-                            padding: '2px 6px',
-                            backgroundColor: device.status === 'active' ? colors.successLight : colors.warningLight,
-                            color: device.status === 'active' ? colors.success : colors.warning,
-                            borderRadius: '4px',
-                          }}
-                        >
-                          {device.status}
-                        </div>
-                      </div>
-                      {selectedDevice?.id === device.id && <FiChevronRight size={18} />}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div style={{ padding: spacing.md, borderTop: `1px solid ${colors.border}` }}>
-              <button
-                onClick={() => setShowAddForm(!showAddForm)}
-                style={{
-                  width: '100%',
-                  ...styles.buttonPrimary,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: spacing.sm,
-                }}
-              >
-                <FiPlus size={18} />
-                {showAddForm ? t('dashboard.cancelAdd') : t('dashboard.addDevice')}
-              </button>
-
-              {showAddForm && (
-                <form onSubmit={handleAddDevice} style={{ marginTop: spacing.md }}>
-                  <input
-                    type="text"
-                    placeholder={t('dashboard.deviceName')}
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    required
-                    style={{ ...styles.input, width: '100%', marginBottom: spacing.md }}
-                  />
-                  <select
-                    value={formData.type}
-                    onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                    style={{ ...styles.select, width: '100%', marginBottom: spacing.md }}
-                  >
-                    <option value="temperature">{t('dashboard.temperature')}</option>
-                    <option value="humidity">{t('dashboard.humidity')}</option>
-                    <option value="motion">{t('dashboard.motion')}</option>
-                    <option value="pressure">{t('dashboard.pressure')}</option>
-                    <option value="light">{t('dashboard.light')}</option>
-                  </select>
-                  <input
-                    type="text"
-                    placeholder={t('common.location')}
-                    value={formData.location}
-                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                    required
-                    style={{ ...styles.input, width: '100%', marginBottom: spacing.md }}
-                  />
-                  <button
-                    type="submit"
-                    style={{
-                      width: '100%',
-                      ...styles.buttonPrimary,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: spacing.sm,
-                    }}
-                  >
-                    <FiPlus size={16} />
-                    {t('dashboard.createDevice')}
-                  </button>
-                </form>
-              )}
+        {/* Error State */}
+        {error && (
+          <div className="card mb-8 border-l-4 border-red-500 bg-red-50 flex gap-4">
+            <FiAlertCircle size={24} className="text-red-600 flex-shrink-0" />
+            <div>
+              <h3 className="font-semibold text-red-700">{t('common.error')}</h3>
+              <p className="text-red-600 text-sm">{error}</p>
             </div>
           </div>
+        )}
 
-          {/* Device Details Column */}
-          <div
-            style={{
-              gridColumn: 'span 2',
-              backgroundColor: '#ffffff',
-              borderRadius: '8px',
-              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-              padding: spacing.lg,
-            }}
-          >
-            {selectedDevice ? (
-              <>
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginBottom: spacing.lg,
-                    paddingBottom: spacing.lg,
-                    borderBottom: `1px solid ${colors.border}`,
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: spacing.md }}>
-                    <div style={{ fontSize: '32px' }}>{deviceIcons[selectedDevice.type] || <FiZap />}</div>
-                    <h2 style={{ margin: 0, fontSize: '24px', fontWeight: '600' }}>{selectedDevice.name}</h2>
-                  </div>
+        {/* WebSocket Status */}
+        <div className="mb-8 p-4 bg-primary-50 rounded-lg border border-primary-200 flex items-center gap-2">
+          <div className={`w-3 h-3 rounded-full ${wsConnected ? 'bg-green-500' : 'bg-gray-400'}`} />
+          <span className="text-sm font-medium text-gray-700">
+            {wsConnected ? t('dashboard.websocketConnected') : t('dashboard.websocketDisconnected')}
+          </span>
+        </div>
+
+        {/* Devices List and Details */}
+        {loading ? (
+          <div className="card text-center py-12">
+            <div className="animate-spin inline-block w-12 h-12 border-4 border-gray-200 border-t-primary-500 rounded-full mb-4" />
+            <p className="text-gray-600">{t('common.loading')}</p>
+          </div>
+        ) : devices.length === 0 ? (
+          <div className="card text-center py-12">
+            <FiAlertCircle size={48} className="text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-600 mb-4">{t('dashboard.noDevices')}</p>
+            <button onClick={() => setShowAddForm(true)} className="btn-primary">
+              {t('dashboard.addDevice')}
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Devices List */}
+            <div className="lg:col-span-1">
+              <h2 className="text-lg font-bold mb-4 text-gray-900">{t('dashboard.devices')}</h2>
+              <div className="space-y-2">
+                {devices.map((device) => (
                   <button
-                    onClick={() => handleDeleteDevice(selectedDevice.id)}
-                    style={{
-                      ...styles.buttonDanger,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: spacing.sm,
-                    }}
+                    key={device.id}
+                    onClick={() => setSelectedDevice(device)}
+                    className={`w-full card-hover p-4 text-left rounded-lg transition-colors ${
+                      selectedDevice?.id === device.id
+                        ? 'bg-primary-50 border-l-4 border-primary-500'
+                        : 'bg-white hover:bg-gray-50'
+                    }`}
                   >
-                    <FiTrash2 size={16} />
-                    {t('dashboard.deleteDevice')}
+                    <div className="flex items-center gap-3">
+                      <div className="text-primary-600">{deviceIcons[device.type] || <FiActivity size={20} />}</div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-gray-900 truncate">{device.name}</p>
+                        <p className="text-xs text-gray-600">{t(`deviceTypes.${device.type}`)}</p>
+                      </div>
+                    </div>
                   </button>
-                </div>
+                ))}
+              </div>
+            </div>
 
-                {/* Device Info Grid */}
-                <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-                    gap: spacing.md,
-                    marginBottom: spacing.lg,
-                  }}
-                >
-                  <div style={{ ...styles.cardCompact }}>
-                    <div style={{ fontSize: '12px', color: colors.gray500, marginBottom: '4px' }}>
-                      {t('common.type')}
+            {/* Device Details */}
+            {selectedDevice && (
+              <div className="lg:col-span-2">
+                {/* Device Header */}
+                <div className="card mb-6 border-l-4 border-primary-500">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h2 className="text-2xl font-bold text-gray-900 mb-2">{selectedDevice.name}</h2>
+                      <p className="text-gray-600 mb-1">{selectedDevice.location}</p>
+                      <div className="flex gap-4 text-sm">
+                        <span className="text-gray-600">
+                          {t(`deviceTypes.${selectedDevice.type}`)}
+                        </span>
+                        <span className="text-gray-600">ID: {selectedDevice.id.substring(0, 8)}</span>
+                      </div>
                     </div>
-                    <div style={{ fontSize: '16px', fontWeight: '600' }}>{selectedDevice.type}</div>
-                  </div>
-                  <div style={{ ...styles.cardCompact }}>
-                    <div style={{ fontSize: '12px', color: colors.gray500, marginBottom: '4px' }}>
-                      {t('common.location')}
-                    </div>
-                    <div style={{ fontSize: '16px', fontWeight: '600' }}>{selectedDevice.location}</div>
-                  </div>
-                </div>
-
-                {/* Statistics */}
-                {stats && (
-                  <div>
-                    <h3 style={{ margin: `0 0 ${spacing.md} 0`, fontSize: '18px', fontWeight: '600' }}>
-                      {t('dashboard.statistics')}
-                    </h3>
-                    <div
-                      style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
-                        gap: spacing.md,
-                      }}
+                    <button
+                      onClick={() => handleDeleteDevice(selectedDevice.id)}
+                      className="p-2 hover:bg-red-50 text-red-600 rounded-lg transition-colors"
                     >
-                      <div style={{ ...styles.cardCompact, backgroundColor: colors.primaryLight }}>
-                        <div style={{ fontSize: '12px', color: colors.primary, marginBottom: '4px' }}>
-                          {t('common.average')}
-                        </div>
-                        <div style={{ fontSize: '24px', fontWeight: '700', color: colors.primary }}>
-                          {stats.average.toFixed(2)}
-                        </div>
-                      </div>
-                      <div style={{ ...styles.cardCompact, backgroundColor: colors.successLight }}>
-                        <div style={{ fontSize: '12px', color: colors.success, marginBottom: '4px' }}>
-                          {t('common.latest')}
-                        </div>
-                        <div style={{ fontSize: '24px', fontWeight: '700', color: colors.success }}>
-                          {stats.latest?.value === undefined ? 'N/A' : stats.latest.value.toFixed(2)}
-                        </div>
-                      </div>
-                      <div style={{ ...styles.cardCompact, backgroundColor: colors.warningLight }}>
-                        <div style={{ fontSize: '12px', color: colors.warning, marginBottom: '4px' }}>
-                          {t('common.minimum')}
-                        </div>
-                        <div style={{ fontSize: '24px', fontWeight: '700', color: colors.warning }}>
-                          {stats.min.toFixed(2)}
-                        </div>
-                      </div>
-                      <div style={{ ...styles.cardCompact, backgroundColor: colors.dangerLight }}>
-                        <div style={{ fontSize: '12px', color: colors.danger, marginBottom: '4px' }}>
-                          {t('common.maximum')}
-                        </div>
-                        <div style={{ fontSize: '24px', fontWeight: '700', color: colors.danger }}>
-                          {stats.max.toFixed(2)}
-                        </div>
-                      </div>
+                      <FiTrash2 size={20} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Statistics Grid */}
+                {stats && (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+                    <div className="card bg-gradient-to-br from-blue-50 to-blue-100">
+                      <p className="text-xs text-gray-600 mb-1">{t('dashboard.latest')}</p>
+                      <p className="text-2xl font-bold text-blue-600">
+                        {stats.latest?.value.toFixed(1) || 'N/A'}
+                      </p>
+                      <p className="text-xs text-gray-600 mt-1">{stats.latest?.unit}</p>
+                    </div>
+                    <div className="card bg-gradient-to-br from-green-50 to-green-100">
+                      <p className="text-xs text-gray-600 mb-1">{t('dashboard.average')}</p>
+                      <p className="text-2xl font-bold text-green-600">{stats.average.toFixed(1)}</p>
+                      <p className="text-xs text-gray-600 mt-1">{stats.latest?.unit}</p>
+                    </div>
+                    <div className="card bg-gradient-to-br from-yellow-50 to-yellow-100">
+                      <p className="text-xs text-gray-600 mb-1">{t('dashboard.minimum')}</p>
+                      <p className="text-2xl font-bold text-yellow-600">{stats.min.toFixed(1)}</p>
+                      <p className="text-xs text-gray-600 mt-1">{stats.latest?.unit}</p>
+                    </div>
+                    <div className="card bg-gradient-to-br from-red-50 to-red-100">
+                      <p className="text-xs text-gray-600 mb-1">{t('dashboard.maximum')}</p>
+                      <p className="text-2xl font-bold text-red-600">{stats.max.toFixed(1)}</p>
+                      <p className="text-xs text-gray-600 mt-1">{stats.latest?.unit}</p>
                     </div>
                   </div>
                 )}
-              </>
-            ) : (
-              <div style={{ textAlign: 'center', padding: spacing.xl }}>
-                <FiActivity size={48} style={{ color: colors.gray300, marginBottom: spacing.md }} />
-                <p style={{ ...styles.textMuted }}>{t('dashboard.selectDevice')}</p>
+
+                {/* Live Readings */}
+                <div className="card">
+                  <h3 className="text-lg font-semibold mb-4 text-gray-900 flex items-center gap-2">
+                    <FiTrendingUp size={20} className="text-primary-600" />
+                    {t('dashboard.liveReadings')}
+                  </h3>
+                  {realtimeReadings.length === 0 ? (
+                    <p className="text-gray-600 text-center py-8">{t('dashboard.noReadings')}</p>
+                  ) : (
+                    <div className="space-y-2 max-h-80 overflow-y-auto">
+                      {realtimeReadings.map((reading, idx) => (
+                        <div key={idx} className="flex justify-between items-center p-2 bg-gray-50 rounded hover:bg-gray-100 transition-colors">
+                          <div>
+                            <p className="font-semibold text-gray-900">{reading.value} {reading.unit}</p>
+                            <p className="text-xs text-gray-600">{reading.timestamp}</p>
+                          </div>
+                          <FiCheck size={16} className="text-green-600" />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
-
-          {/* Live Readings Column */}
-          <div
-            style={{
-              gridColumn: 'span 1',
-              backgroundColor: '#ffffff',
-              borderRadius: '8px',
-              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-              display: 'flex',
-              flexDirection: 'column',
-            }}
-          >
-            <div style={{ padding: spacing.lg, borderBottom: `1px solid ${colors.border}` }}>
-              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: spacing.sm }}>
-                <FiTrendingUp size={18} />
-                {t('dashboard.liveReadings')}
-              </h3>
-            </div>
-
-            <div style={{ flex: 1, overflowY: 'auto', maxHeight: '500px', padding: spacing.md }}>
-              {realtimeReadings.length === 0 ? (
-                <p style={{ ...styles.textMuted, textAlign: 'center', padding: spacing.lg }}>
-                  {t('dashboard.noReadings')}
-                </p>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: spacing.sm }}>
-                  {realtimeReadings.map((reading, idx) => (
-                    <div
-                      key={reading.id}
-                      style={{
-                        padding: spacing.md,
-                        backgroundColor: idx === 0 ? colors.successLight : colors.gray100,
-                        borderRadius: '6px',
-                        borderLeft: `3px solid ${idx === 0 ? colors.success : colors.border}`,
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          marginBottom: '4px',
-                        }}
-                      >
-                        <strong style={{ fontSize: '16px' }}>
-                          {reading.value.toFixed(2)} {reading.unit}
-                        </strong>
-                        <span style={{ fontSize: '12px', color: colors.gray500 }}>
-                          {new Date(reading.timestamp).toLocaleTimeString()}
-                        </span>
-                      </div>
-                      {idx === 0 && (
-                        <div style={{ fontSize: '11px', color: colors.success, marginTop: '4px', fontWeight: '500' }}>
-                          {t('dashboard.justNow')}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+        )}
       </main>
-
-      <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-
-        @media (max-width: 768px) {
-          div[style*="gridColumn"] {
-            grid-column: span 1 !important;
-          }
-        }
-
-        button:hover:not(:disabled) {
-          opacity: 0.9;
-          transform: translateY(-2px);
-        }
-
-        button:active:not(:disabled) {
-          transform: translateY(0);
-        }
-      `}</style>
-    </div>
+    </Layout>
   );
 }
