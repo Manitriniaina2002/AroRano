@@ -89,7 +89,7 @@ export class DevicesService {
   ): Promise<SensorReading[]> {
     return await this.sensorReadingRepository.find({
       where: { deviceId },
-      order: { timestamp: 'DESC' },
+      order: { createdAt: 'DESC' },
       take: limit,
     });
   }
@@ -97,7 +97,7 @@ export class DevicesService {
   async getDeviceStats(deviceId: string) {
     const readings = await this.sensorReadingRepository.find({
       where: { deviceId },
-      order: { timestamp: 'DESC' },
+      order: { createdAt: 'DESC' },
       take: 1000,
     });
 
