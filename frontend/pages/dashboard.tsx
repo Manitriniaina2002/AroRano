@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import React, { useEffect, useState } from 'react';
 import { api, Device, DeviceStats, SensorReading } from '@/lib/api';
@@ -636,4 +636,3 @@ export default function DevicesDashboard() {
     </div>
   );
 }
-    const handleDeviceUpdated = (event: any) => {
