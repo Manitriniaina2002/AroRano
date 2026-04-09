@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { colors, spacing, styles } from '@/lib/theme';
-import { FiGlobe, FiMenu, FiX } from 'react-icons/fi';
-import { t, setLanguage as setI18nLanguage, getLanguage } from '@/lib/i18n';
+import { FiGlobe } from 'react-icons/fi';
+import { setLanguage as setI18nLanguage, getLanguage } from '@/lib/i18n';
 
 interface AppHeaderProps {
   title?: string;
@@ -9,7 +9,6 @@ interface AppHeaderProps {
 
 export function AppHeader({ title = 'AroRano' }: AppHeaderProps) {
   const [language, setLanguage] = useState<'en' | 'mg'>('en');
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     setLanguage(getLanguage());
@@ -69,9 +68,7 @@ export function AppHeader({ title = 'AroRano' }: AppHeaderProps) {
             }}
           >
             <FiGlobe size={18} />
-            <span style={{ display: 'none', '@media (min-width: 768px)': { display: 'inline' } }}>
-              {language.toUpperCase()}
-            </span>
+            <span>{language.toUpperCase()}</span>
           </button>
         </div>
       </div>
