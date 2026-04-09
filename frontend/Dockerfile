@@ -31,7 +31,7 @@ RUN npm ci --only=production
 
 # Copy built application and public assets from builder
 COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/public ./public
+RUN mkdir -p ./public || true
 
 # Expose port
 EXPOSE 3000
