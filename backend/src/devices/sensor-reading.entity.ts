@@ -23,7 +23,7 @@ export class SensorReading {
   @Column({ type: 'varchar', length: 50 })
   unit: string; // e.g., '°C', '%', 'RPM', etc.
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'createdAt' })
   timestamp: Date;
 
   @ManyToOne(() => Device, (device) => device.readings, { onDelete: 'CASCADE' })
