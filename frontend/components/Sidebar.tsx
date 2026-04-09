@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/router';
 import { FiHome, FiActivity, FiChevronLeft, FiChevronRight, FiLogOut } from 'react-icons/fi';
 import { t } from '@/lib/i18n';
@@ -12,6 +13,11 @@ interface SidebarProps {
 export function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(!isOpen);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleToggle = () => {
     const newState = !collapsed;
@@ -44,17 +50,19 @@ export function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
     >
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-primary-500">
-        {!collapsed && (
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-primary-400 flex items-center justify-center font-bold">
-              AR
-            </div>
-            <h1 className="text-lg font-bold">AroRano</h1>
-          </div>
-        )}
+        <div className="flex justify-center flex-1">
+          <Image
+            src="/images/logo.png"
+            alt="AroRano Logo"
+            width={collapsed ? 28 : 40}
+            height={collapsed ? 28 : 40}
+            className={`object-contain ${collapsed ? 'w-7 h-7' : 'w-10 h-10'}`}
+            unoptimized
+          />
+        </div>
         <button
           onClick={handleToggle}
-          className="p-2 hover:bg-primary-500 rounded-lg transition-colors"
+          className="p-2 hover:bg-primary-500 rounded-lg transition-colors flex-shrink-0"
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           {collapsed ? <FiChevronRight size={20} /> : <FiChevronLeft size={20} />}
@@ -66,6 +74,7 @@ export function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
         {navItems.map((item) => {
           const Icon = item.icon;
           const active = isActive(item.href);
+          const label = mounted ? t(item.translationKey) : item.label;
           return (
             <Link key={item.href} href={item.href}>
               <div
@@ -74,10 +83,10 @@ export function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
                 } flex items-center gap-3`}
               >
                 <Icon size={20} />
-                {!collapsed && <span className="font-medium text-sm">{t(item.translationKey)}</span>}
+                {!collapsed && <span className="font-medium text-sm">{label}</span>}
                 {collapsed && (
                   <div className="absolute left-full ml-2 bg-gray-900 text-white px-2 py-1 rounded text-xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                    {t(item.translationKey)}
+                    {label}
                   </div>
                 )}
               </div>
@@ -95,7 +104,7 @@ export function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
           }}
         >
           <FiLogOut size={20} />
-          {!collapsed && <span className="font-medium text-sm">{t('common.close')}</span>}
+          {!collapsed && <span className="font-medium text-sm">{mounted ? t('common.close') : 'Close'}</span>}
         </button>
       </div>
     </aside>
