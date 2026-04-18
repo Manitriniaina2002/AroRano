@@ -6,7 +6,8 @@ import Image from 'next/image';
 import { api, HealthResponse, WelcomeResponse } from '@/lib/api';
 import { t, getLanguage } from '@/lib/i18n';
 import { Layout } from '@/components/Layout';
-import { FiArrowRight, FiCheckCircle, FiAlertCircle, FiLoader, FiDroplet, FiActivity, FiTrendingUp, FiShield } from 'react-icons/fi';
+import { WaveAnimation } from '@/components/WaveAnimation';
+import { FiArrowRight, FiCheckCircle, FiAlertCircle, FiLoader, FiDroplet, FiActivity, FiTrendingUp } from 'react-icons/fi';
 
 export default function Home() {
   const [health, setHealth] = useState<HealthResponse | null>(null);
@@ -44,81 +45,71 @@ export default function Home() {
   return (
     <Layout>
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-blue-600 via-cyan-500 to-blue-700 text-white py-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+      <section className="bg-gradient-to-br from-blue-600 via-cyan-500 to-blue-700 text-white py-8 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+        <WaveAnimation />
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-10 right-10 w-40 h-40 bg-white rounded-full blur-3xl"></div>
           <div className="absolute bottom-10 left-10 w-40 h-40 bg-white rounded-full blur-3xl"></div>
         </div>
         <div className="max-w-4xl mx-auto text-center relative z-10 flex justify-center items-center">
           <Image
-            src="/images/logo.png"
+            src="/images/logo.PNG"
             alt="AroRano Logo"
-            width={200}
-            height={200}
-            className="w-48 h-48 object-contain"
+            width={120}
+            height={120}
+            className="w-32 h-32 object-contain"
             unoptimized
           />
         </div>
       </section>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        {/* Features Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
-          <div className="bg-white rounded-xl border border-blue-100 p-6 hover:shadow-lg transition-shadow">
-            <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center mb-4">
-              <FiDroplet size={24} className="text-blue-600" />
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Introduction */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-gray-900 mb-3">Smart Water Monitoring</h1>
+          <p className="text-lg text-gray-600">Real-time reservoir monitoring with intelligent sensors and analytics</p>
+        </div>
+
+        {/* Key Features - Simplified */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+          <div className="bg-white rounded-lg border border-blue-100 p-6">
+            <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center mb-3">
+              <FiDroplet size={20} className="text-blue-600" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Water Monitoring</h3>
-            <p className="text-sm text-gray-600">Real-time water level tracking across multiple reservoirs</p>
+            <h3 className="font-semibold text-gray-900 mb-1">Real-time Monitoring</h3>
+            <p className="text-sm text-gray-600">Instant water level tracking and sensor data</p>
           </div>
 
-          <div className="bg-white rounded-xl border border-cyan-100 p-6 hover:shadow-lg transition-shadow">
-            <div className="w-12 h-12 bg-cyan-50 rounded-lg flex items-center justify-center mb-4">
-              <FiActivity size={24} className="text-cyan-600" />
+          <div className="bg-white rounded-lg border border-cyan-100 p-6">
+            <div className="w-10 h-10 bg-cyan-50 rounded-lg flex items-center justify-center mb-3">
+              <FiActivity size={20} className="text-cyan-600" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Multi-Sensor</h3>
-            <p className="text-sm text-gray-600">Temperature, pH, turbidity, and flow rate monitoring</p>
+            <h3 className="font-semibold text-gray-900 mb-1">Multi-Sensor Support</h3>
+            <p className="text-sm text-gray-600">Temperature, pH, turbidity & flow monitoring</p>
           </div>
 
-          <div className="bg-white rounded-xl border border-teal-100 p-6 hover:shadow-lg transition-shadow">
-            <div className="w-12 h-12 bg-teal-50 rounded-lg flex items-center justify-center mb-4">
-              <FiTrendingUp size={24} className="text-teal-600" />
+          <div className="bg-white rounded-lg border border-teal-100 p-6">
+            <div className="w-10 h-10 bg-teal-50 rounded-lg flex items-center justify-center mb-3">
+              <FiTrendingUp size={20} className="text-teal-600" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Analytics</h3>
-            <p className="text-sm text-gray-600">Trends, statistics, and historical data analysis</p>
-          </div>
-
-          <div className="bg-white rounded-xl border border-blue-100 p-6 hover:shadow-lg transition-shadow">
-            <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center mb-4">
-              <FiShield size={24} className="text-blue-600" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Alerts</h3>
-            <p className="text-sm text-gray-600">Instant notifications for critical thresholds</p>
+            <h3 className="font-semibold text-gray-900 mb-1">Smart Alerts</h3>
+            <p className="text-sm text-gray-600">Instant notifications for critical events</p>
           </div>
         </div>
 
-        {/* Status Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* System Status Section */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
           {/* System Status */}
           {!loading && !error && health && (
-            <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl border-2 border-green-200 p-6">
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-green-200 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <FiCheckCircle size={24} className="text-green-700" />
+            <div className="bg-green-50 rounded-lg border border-green-200 p-6">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 bg-green-200 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <FiCheckCircle size={20} className="text-green-700" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-green-900 mb-3">System Status</h3>
-                  <div className="bg-white rounded-lg p-3">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm text-gray-600">Status:</span>
-                      <span className="text-sm font-bold text-green-700">{health.status}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">Message:</span>
-                      <span className="text-sm font-bold text-gray-900">{health.message}</span>
-                    </div>
-                  </div>
+                  <h3 className="font-semibold text-green-900 mb-1">System Status</h3>
+                  <p className="text-sm text-green-800">{health.status} • {health.message}</p>
                 </div>
               </div>
             </div>
@@ -126,44 +117,42 @@ export default function Home() {
 
           {/* Welcome Message */}
           {!loading && !error && message && (
-            <div className="bg-gradient-to-br from-blue-50 to-cyan-100 rounded-xl border-2 border-blue-200 p-6">
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-blue-200 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <FiDroplet size={24} className="text-blue-700" />
+            <div className="bg-blue-50 rounded-lg border border-blue-200 p-6">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 bg-blue-200 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <FiDroplet size={20} className="text-blue-700" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-blue-900 mb-3">Welcome</h3>
-                  <p className="text-blue-800 font-medium text-sm">{message.message}</p>
+                  <h3 className="font-semibold text-blue-900 mb-1">Welcome</h3>
+                  <p className="text-sm text-blue-800">{message.message}</p>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Error State */}
           {error && !loading && (
-            <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-xl border-2 border-red-200 p-6">
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-red-200 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <FiAlertCircle size={24} className="text-red-700" />
+            <div className="bg-red-50 rounded-lg border border-red-200 p-6">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 bg-red-200 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <FiAlertCircle size={20} className="text-red-700" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-red-900 mb-2">Error</h3>
-                  <p className="text-red-700 text-sm">{error}</p>
+                  <h3 className="font-semibold text-red-900 mb-1">Connection Issue</h3>
+                  <p className="text-sm text-red-800">{error}</p>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Loading State */}
           {loading && (
-            <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border-2 border-gray-200 p-6">
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center flex-shrink-0 animate-spin">
-                  <FiLoader size={24} className="text-gray-700" />
+            <div className="bg-gray-50 rounded-lg border border-gray-200 p-6">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center flex-shrink-0 animate-spin">
+                  <FiLoader size={20} className="text-gray-700" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Loading</h3>
-                  <p className="text-gray-700 text-sm">Initializing system...</p>
+                  <h3 className="font-semibold text-gray-900 mb-1">Initializing</h3>
+                  <p className="text-sm text-gray-700">Loading system data...</p>
                 </div>
               </div>
             </div>
@@ -171,15 +160,15 @@ export default function Home() {
         </div>
 
         {/* CTA Section */}
-        <div className="mt-16 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-xl p-8 text-white text-center">
-          <h2 className="text-3xl font-bold mb-3">Ready to Monitor?</h2>
-          <p className="text-lg opacity-90 mb-6">Start managing your water reservoirs with real-time insights</p>
+        <div className="mt-12 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-lg p-8 text-white text-center">
+          <h2 className="text-2xl font-bold mb-2">Start Monitoring Now</h2>
+          <p className="text-sm opacity-90 mb-5">Access real-time reservoir data and insights</p>
           <Link 
             href="/dashboard" 
-            className="inline-flex items-center gap-2 bg-white text-blue-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
+            className="inline-flex items-center gap-2 bg-white text-blue-600 px-5 py-2 rounded-lg font-semibold hover:bg-gray-100 transition-colors text-sm"
           >
             Go to Dashboard
-            <FiArrowRight size={20} />
+            <FiArrowRight size={16} />
           </Link>
         </div>
       </main>

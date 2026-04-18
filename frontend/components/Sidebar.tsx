@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/router';
-import { FiHome, FiActivity, FiChevronLeft, FiChevronRight, FiLogOut } from 'react-icons/fi';
-import { t } from '@/lib/i18n';
+import { FiHome, FiActivity, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 
 interface SidebarProps {
   isOpen?: boolean;
@@ -13,11 +12,6 @@ interface SidebarProps {
 export function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(!isOpen);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const handleToggle = () => {
     const newState = !collapsed;
@@ -32,13 +26,11 @@ export function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
       label: 'Home',
       icon: FiHome,
       href: '/',
-      translationKey: 'home.title',
     },
     {
       label: 'Dashboard',
       icon: FiActivity,
       href: '/dashboard',
-      translationKey: 'dashboard.title',
     },
   ];
 
@@ -46,23 +38,23 @@ export function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
     <aside
       className={`${
         collapsed ? 'w-20' : 'w-64'
-      } bg-gradient-to-b from-primary-600 to-primary-700 text-white transition-all duration-300 flex flex-col h-screen shadow-lg`}
+      } bg-white text-gray-800 transition-all duration-300 flex flex-col h-screen shadow-lg border-r border-gray-200`}
     >
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-primary-500">
+      <div className="flex items-center justify-between p-4 border-b border-gray-200">
         <div className="flex justify-center flex-1">
           <Image
-            src="/images/logo.png"
+            src="/images/logo.PNG"
             alt="AroRano Logo"
-            width={collapsed ? 28 : 40}
-            height={collapsed ? 28 : 40}
-            className={`object-contain ${collapsed ? 'w-7 h-7' : 'w-10 h-10'}`}
+            width={collapsed ? 36 : 72}
+            height={collapsed ? 36 : 72}
+            className={`object-contain ${collapsed ? 'w-9 h-9' : 'w-20 h-20'}`}
             unoptimized
           />
         </div>
         <button
           onClick={handleToggle}
-          className="p-2 hover:bg-primary-500 rounded-lg transition-colors flex-shrink-0"
+          className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0 text-gray-600"
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           {collapsed ? <FiChevronRight size={20} /> : <FiChevronLeft size={20} />}
@@ -74,12 +66,12 @@ export function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
         {navItems.map((item) => {
           const Icon = item.icon;
           const active = isActive(item.href);
-          const label = mounted ? t(item.translationKey) : item.label;
+          const label = item.label;
           return (
             <Link key={item.href} href={item.href}>
               <div
                 className={`sidebar-link ${
-                  active ? 'sidebar-link-active bg-primary-500' : 'sidebar-link-inactive hover:bg-primary-500/20'
+                  active ? 'sidebar-link-active bg-blue-100 text-blue-700' : 'sidebar-link-inactive hover:bg-gray-100 text-gray-700'
                 } flex items-center gap-3`}
               >
                 <Icon size={20} />
@@ -94,19 +86,6 @@ export function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
           );
         })}
       </nav>
-
-      {/* Footer */}
-      <div className="p-4 border-t border-primary-500">
-        <button
-          className="sidebar-link sidebar-link-inactive hover:bg-red-500 hover:text-white w-full flex items-center gap-3"
-          onClick={() => {
-            // Logout logic can be added here
-          }}
-        >
-          <FiLogOut size={20} />
-          {!collapsed && <span className="font-medium text-sm">{mounted ? t('common.close') : 'Close'}</span>}
-        </button>
-      </div>
     </aside>
   );
 }

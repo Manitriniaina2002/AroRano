@@ -5,19 +5,7 @@ import { api, Device, DeviceStats, SensorReading } from '@/lib/api';
 import { websocket, SensorReadingEvent } from '@/lib/websocket';
 import { t, getLanguage } from '@/lib/i18n';
 import { Layout } from '@/components/Layout';
-import { Button } from '@/components/ui/button';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { useToast } from '@/components/ui/toaster';
-import {
-  FiPlus,
-  FiTrash2,
   FiTrendingUp,
   FiAlertCircle,
   FiCheck,
@@ -28,22 +16,15 @@ import {
 } from 'react-icons/fi';
 
 export default function DevicesDashboard() {
-  const [devices, setDevices] = useState<Device[]>([]);
+  const [_devices, setDevices] = useState<Device[]>([]);
   const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
   const [stats, setStats] = useState<DeviceStats | null>(null);
   const [realtimeReadings, setRealtimeReadings] = useState<SensorReading[]>([]);
   const [loading, setLoading] = useState(true);
+  const [slowLoad, setSlowLoad] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showAddForm, setShowAddForm] = useState(false);
   const [wsConnected, setWsConnected] = useState(false);
   const [language, setLanguage] = useState('en');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toast } = useToast();
-  const [formData, setFormData] = useState({
-    name: '',
-    type: 'waterLevel',
-    location: '',
-  });
 
   const deviceConfig: Record<string, { icon: React.ReactNode; colorClass: string; bgClass: string }> = {
     waterLevel: {
@@ -78,6 +59,19 @@ export default function DevicesDashboard() {
     },
   };
 
+  const hardwareItems = [
+    { name: 'Capteur de pluie', detail: 'Détection des précipitations', icon: <FiCloud size={16} />, tone: 'bg-blue-50 text-blue-700 border-blue-100' },
+    { name: 'Buzzer', detail: 'Alerte sonore', icon: <FiAlertCircle size={16} />, tone: 'bg-red-50 text-red-700 border-red-100' },
+    { name: 'LED rouge / verte / jaune', detail: 'Signal visuel d’état', icon: <FiActivity size={16} />, tone: 'bg-amber-50 text-amber-700 border-amber-100' },
+    { name: 'Pompe à eau', detail: 'Actionnement du débit', icon: <FiZap size={16} />, tone: 'bg-cyan-50 text-cyan-700 border-cyan-100' },
+    { name: 'Relais 1 canal', detail: 'Commande de puissance', icon: <FiActivity size={16} />, tone: 'bg-slate-50 text-slate-700 border-slate-200' },
+    { name: 'ESP32', detail: 'Microcontrôleur principal', icon: <FiZap size={16} />, tone: 'bg-blue-50 text-blue-700 border-blue-100' },
+    { name: 'DHT22', detail: 'Température et humidité', icon: <FiTrendingUp size={16} />, tone: 'bg-emerald-50 text-emerald-700 border-emerald-100' },
+    { name: 'Bouton poussoir', detail: 'Commande manuelle', icon: <FiCheck size={16} />, tone: 'bg-indigo-50 text-indigo-700 border-indigo-100' },
+    { name: 'Capteur ultrason', detail: 'Mesure du niveau d’eau', icon: <FiCloud size={16} />, tone: 'bg-sky-50 text-sky-700 border-sky-100' },
+    { name: 'Écran LCD', detail: 'Affichage local', icon: <FiActivity size={16} />, tone: 'bg-violet-50 text-violet-700 border-violet-100' },
+  ];
+
   // Initialize WebSocket connection and load data
   useEffect(() => {
     setLanguage(getLanguage());
@@ -87,11 +81,17 @@ export default function DevicesDashboard() {
         setError(null);
 
         // Connect to WebSocket
-        await websocket.connect();
-        setWsConnected(true);
+        try {
+          await websocket.connect();
+          setWsConnected(true);
+        } catch (wsErr) {
+          console.warn('WebSocket connection failed:', wsErr);
+          // Continue even if WebSocket fails
+        }
 
         // Load initial data
-        const data = await api.devices.getAll();
+        let data = await api.devices.getAll();
+        
         setDevices(data);
         if (data.length > 0 && !selectedDevice) {
           setSelectedDevice(data[0]);
@@ -106,10 +106,21 @@ export default function DevicesDashboard() {
 
     init();
 
-    return () => {
-      websocket.disconnect();
-    };
   }, []);
+
+  useEffect(() => {
+    if (!loading) {
+      setSlowLoad(false);
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setSlowLoad(true);
+      setLoading(false);
+    }, 8000);
+
+    return () => window.clearTimeout(timer);
+  }, [loading]);
 
   // Load stats and subscribe to real-time updates when device changes
   useEffect(() => {
@@ -150,39 +161,6 @@ export default function DevicesDashboard() {
     }
   }, [selectedDevice]);
 
-  // Listen for device updates
-  useEffect(() => {
-    const handleDeviceUpdated = (event: any) => {
-      setDevices((prev) =>
-        prev.map((d) => (d.id === event.deviceId ? event.device : d))
-      );
-      if (selectedDevice?.id === event.deviceId) {
-        setSelectedDevice(event.device);
-      }
-    };
-
-    const handleDeviceCreated = (event: any) => {
-      setDevices((prev) => [event.device, ...prev]);
-    };
-
-    const handleDeviceDeleted = (event: any) => {
-      setDevices((prev) => prev.filter((d) => d.id !== event.deviceId));
-      if (selectedDevice?.id === event.deviceId) {
-        setSelectedDevice(null);
-      }
-    };
-
-    websocket.onDeviceUpdated(handleDeviceUpdated);
-    websocket.onDeviceCreated(handleDeviceCreated);
-    websocket.onDeviceDeleted(handleDeviceDeleted);
-
-    return () => {
-      websocket.off('deviceUpdated');
-      websocket.off('deviceCreated');
-      websocket.off('deviceDeleted');
-    };
-  }, [selectedDevice]);
-
   const loadStats = async (deviceId: string) => {
     try {
       const data = await api.devices.getStats(deviceId);
@@ -201,158 +179,186 @@ export default function DevicesDashboard() {
     }
   };
 
-  const handleAddDevice = async () => {
-    if (!formData.name || !formData.type || !formData.location) {
-      toast({
-        title: t('common.error'),
-        description: t('dashboard.fillAllFields') || 'Please fill all fields',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    try {
-      setIsSubmitting(true);
-      await api.devices.create(formData as any);
-      setFormData({ name: '', type: 'temperature', location: '' });
-      setShowAddForm(false);
-      toast({
-        title: t('dashboard.success') || 'Success',
-        description: t('dashboard.deviceCreated') || 'Device created successfully',
-        variant: 'success',
-      });
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : t('common.error');
-      console.error('Error creating device:', err);
-      toast({
-        title: t('common.error'),
-        description: errorMessage,
-        variant: 'destructive',
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleDeleteDevice = async (deviceId: string) => {
-    if (window.confirm(t('dashboard.confirmDelete') || 'Are you sure?')) {
-      try {
-        await api.devices.delete(deviceId);
-        toast({
-          title: t('dashboard.success') || 'Success',
-          description: t('dashboard.deviceDeleted') || 'Device deleted successfully',
-          variant: 'success',
-        });
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : t('common.error');
-        console.error('Error deleting device:', err);
-        toast({
-          title: t('common.error'),
-          description: errorMessage,
-          variant: 'destructive',
-        });
-      }
-    }
-  };
-
   const cfg = (type: string) => deviceConfig[type] ?? deviceConfig.motion;
+  const reservoirLevel = Math.min(Math.max(stats?.latest?.value ?? 0, 0), 100);
+  const reservoirStatus = reservoirLevel > 70 ? 'Optimal' : reservoirLevel > 40 ? 'Normal' : 'Low';
+  const reservoirStatusClass = reservoirLevel > 70
+    ? 'bg-green-50 text-green-700'
+    : reservoirLevel > 40
+      ? 'bg-amber-50 text-amber-700'
+      : 'bg-red-50 text-red-700';
+
+  const ReservoirCard = () => (
+    <div className="bg-white rounded-xl border border-gray-100 p-6">
+      <div className="flex items-center justify-between mb-5">
+        <h2 className="text-sm font-semibold text-gray-700">Reservoir Representation</h2>
+        <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${reservoirStatusClass}`}>
+          {stats ? reservoirStatus : 'No data yet'}
+        </span>
+      </div>
+
+      <div className="flex flex-col md:flex-row items-center md:items-end justify-center gap-8">
+        <div className="flex items-end gap-4">
+          {/* Measurement scale */}
+          <div className="flex flex-col justify-between h-64 text-[9px] font-medium text-gray-500 pb-2 space-y-0">
+            <div className="flex items-center gap-1">
+              <div className="w-4 h-px bg-gray-300" />
+              <span>100%</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-px bg-gray-200" />
+              <span>80%</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-4 h-px bg-gray-300" />
+              <span>60%</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-px bg-gray-200" />
+              <span>40%</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-4 h-px bg-gray-300" />
+              <span>20%</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-px bg-gray-200" />
+              <span>0%</span>
+            </div>
+          </div>
+
+          {/* Tank body */}
+          <div className="relative">
+            {/* Tank outer shell */}
+            <div className="w-32 h-64 bg-gradient-to-r from-gray-100 to-gray-50 rounded-b-3xl border-2 border-gray-300 relative overflow-hidden shadow-lg">
+              {/* Tank top rim */}
+              <div className="absolute -top-1 left-0 right-0 h-2 bg-gradient-to-b from-gray-400 to-gray-300 rounded-full shadow-sm" />
+
+              {/* Water fill */}
+              <div
+                className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-blue-700 via-blue-500 to-cyan-400 transition-all duration-700 ease-out"
+                style={{ height: `${reservoirLevel}%` }}
+              >
+                {/* Water surface waves */}
+                <div className="absolute -top-1 left-0 right-0 h-6 overflow-hidden">
+                  <div className="reservoir-wave reservoir-wave-1 absolute inset-x-0 top-0 h-6 bg-gradient-to-b from-white/40 to-white/10" />
+                  <div className="reservoir-wave reservoir-wave-2 absolute inset-x-0 top-1 h-5 bg-cyan-100/35" />
+                </div>
+
+                {/* Water depth shading */}
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-900/5 to-blue-900/15" />
+
+                {/* Light reflection */}
+                <div className="absolute top-1/4 left-1 w-1.5 h-12 bg-white/20 rounded-full blur-md" />
+              </div>
+
+              {/* Internal measurement marks */}
+              <div className="absolute inset-0 pointer-events-none">
+                {[20, 40, 60, 80].map((mark) => (
+                  <div
+                    key={mark}
+                    className="absolute left-0 right-0 border-t border-gray-200"
+                    style={{ bottom: `${mark}%` }}
+                  />
+                ))}
+              </div>
+
+              {/* Drain valve */}
+              <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-6 h-3 bg-gradient-to-b from-gray-400 to-gray-600 rounded-b-lg shadow-md" />
+
+              {/* Current level display */}
+              <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-bold text-white text-lg bg-black/40 backdrop-blur-sm px-3 py-1.5 rounded-lg shadow-lg">
+                {reservoirLevel.toFixed(0)}%
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="w-full max-w-sm space-y-3">
+          <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
+            <p className="text-xs text-gray-600 mb-1">Current Water Level</p>
+            <div className="flex items-baseline gap-2">
+              <p className="text-2xl font-bold text-blue-700">{stats?.latest?.value.toFixed(1) ?? '0.0'}</p>
+              <p className="text-sm text-gray-500">{stats?.latest?.unit ?? '%'}</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-cyan-50 rounded-lg p-3 border border-cyan-100">
+              <p className="text-xs text-gray-600 mb-1">Average</p>
+              <p className="text-lg font-bold text-cyan-700">{stats?.average.toFixed(1) ?? '—'}</p>
+            </div>
+            <div className="bg-indigo-50 rounded-lg p-3 border border-indigo-100">
+              <p className="text-xs text-gray-600 mb-1">Latest Read</p>
+              <p className="text-lg font-bold text-indigo-700">{stats?.latest?.value.toFixed(1) ?? '—'}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
-    <Layout title="AroRano">
-      {/* ── Page shell ── */}
-      <div className="flex h-[calc(100vh-64px)] overflow-hidden bg-gray-50">
-
-        {/* ── Left sidebar ── */}
-        <aside className="w-56 flex-shrink-0 bg-white border-r border-gray-100 flex flex-col">
-          {/* Sidebar header */}
-          <div className="px-4 py-4 border-b border-gray-100">
-            <p className="text-[11px] font-semibold tracking-widest text-cyan-600 uppercase">
-              Water Reservoirs
-            </p>
-          </div>
-
-          {/* Device list */}
-          <nav className="flex-1 overflow-y-auto py-2">
-            {loading ? (
-              <div className="px-4 py-8 flex justify-center">
-                <div className="w-6 h-6 border-2 border-gray-200 border-t-violet-500 rounded-full animate-spin" />
+    <Layout>
+      {/* ── Main content ── */}
+      <main className="flex-1 overflow-y-auto bg-gray-50">
+          {/* Loading state */}
+          {loading && (
+            <div className="max-w-6xl mx-auto w-full min-h-[65vh] flex flex-col items-center justify-center text-center px-6">
+              <div className="w-12 h-12 rounded-2xl bg-blue-100 flex items-center justify-center mb-4 animate-spin">
+                <FiCloud size={22} className="text-blue-400" />
               </div>
-            ) : devices.length === 0 ? (
-              <p className="px-4 py-6 text-sm text-gray-400 text-center">
-                {t('dashboard.noDevices')}
-              </p>
-            ) : (
-              devices.map((device) => {
-                const { icon, colorClass, bgClass } = cfg(device.type);
-                const active = selectedDevice?.id === device.id;
-                return (
-                  <button
-                    key={device.id}
-                    onClick={() => setSelectedDevice(device)}
-                    className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors border-l-2 ${
-                      active
-                        ? 'bg-violet-50 border-l-violet-500'
-                        : 'border-l-transparent hover:bg-gray-50'
-                    }`}
-                  >
-                    <span className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${bgClass} ${colorClass}`}>
-                      {icon}
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-gray-800 truncate">{device.name}</p>
-                      <p className="text-[11px] text-gray-400 capitalize">{t(`deviceTypes.${device.type}`)}</p>
-                    </div>
-                  </button>
-                );
-              })
-            )}
-          </nav>
+              <p className="text-gray-500 text-sm">Loading reservoirs...</p>
+            </div>
+          )}
 
-          {/* Add device button */}
-          <div className="p-3 border-t border-gray-100">
-            <button
-              onClick={() => setShowAddForm(true)}
-              className="w-full flex items-center justify-center gap-1.5 py-2 text-sm font-medium text-gray-600 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors border border-gray-200"
-            >
-              <FiPlus size={15} />
-              {t('dashboard.addDevice')}
-            </button>
-          </div>
-        </aside>
+          {slowLoad && !selectedDevice && !error && (
+            <div className="max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 mt-6">
+              <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm">
+              <FiAlertCircle size={18} className="text-amber-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-medium text-amber-800">Connection is slow</p>
+                <p className="text-amber-700 mt-0.5">You can add a reservoir manually while the backend reconnects.</p>
+              </div>
+            </div>
+            </div>
+          )}
 
-        {/* ── Main area ── */}
-        <main className="flex-1 overflow-y-auto">
           {/* Error banner */}
           {error && (
-            <div className="mx-6 mt-6 flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-xl text-sm">
+            <div className="max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 mt-6">
+              <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-xl text-sm">
               <FiAlertCircle size={18} className="text-red-500 flex-shrink-0 mt-0.5" />
               <div>
                 <p className="font-medium text-red-700">{t('common.error')}</p>
                 <p className="text-red-600 mt-0.5">{error}</p>
               </div>
             </div>
+            </div>
           )}
 
           {/* Empty state */}
           {!loading && !selectedDevice && !error && (
-            <div className="flex flex-col items-center justify-center h-full text-center px-8">
-              <div className="w-12 h-12 rounded-2xl bg-blue-100 flex items-center justify-center mb-4">
-                <FiCloud size={22} className="text-blue-400" />
+            <div className="max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+              <div className="text-center py-4">
+                <div className="w-12 h-12 rounded-2xl bg-blue-100 flex items-center justify-center mx-auto mb-4">
+                  <FiCloud size={22} className="text-blue-400" />
+                </div>
+                <h1 className="text-lg font-semibold text-gray-900">Monitoring ready</h1>
+                <p className="text-gray-500 text-sm mt-1">A reservoir is shown here even before the first measurement arrives.</p>
               </div>
-              <p className="text-gray-500 text-sm">No reservoirs added yet</p>
-              <button
-                onClick={() => setShowAddForm(true)}
-                className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                <FiPlus size={15} />
-                Add Reservoir
-              </button>
+
+              <ReservoirCard />
+
+              <div className="bg-white rounded-xl border border-gray-100 p-6 text-center">
+                <p className="text-gray-500 text-sm">No reservoirs available for monitoring yet</p>
+              </div>
             </div>
           )}
 
           {/* Device detail */}
           {selectedDevice && (
-            <div className="p-6 space-y-5">
+            <div className="max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 space-y-6">
 
               {/* Header row */}
               <div className="flex items-start justify-between">
@@ -377,60 +383,10 @@ export default function DevicesDashboard() {
                       : <><FiWifiOff size={12} />{t('dashboard.websocketDisconnected')}</>
                     }
                   </span>
-                  {/* Delete */}
-                  <button
-                    onClick={() => handleDeleteDevice(selectedDevice.id)}
-                    className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors border border-gray-200"
-                  >
-                    <FiTrash2 size={15} />
-                  </button>
                 </div>
               </div>
 
-              {/* Water Reservoir Visualization */}
-              <div className="bg-white rounded-xl border border-gray-100 p-6">
-                <h2 className="text-sm font-semibold text-gray-700 mb-4">Water Level Status</h2>
-                <div className="flex items-center justify-center gap-8">
-                  {/* Tank visualization */}
-                  <div className="flex flex-col items-center gap-3">
-                    <div className="w-20 h-40 border-4 border-blue-300 rounded-lg bg-gradient-to-b from-blue-100 to-blue-50 relative overflow-hidden flex items-end justify-center">
-                      {/* Water level visual */}
-                      <div 
-                        className="w-full bg-gradient-to-t from-blue-500 to-cyan-400 transition-all duration-500 ease-out rounded-b"
-                        style={{ height: `${Math.min(stats?.latest?.value ?? 0, 100)}%` }}
-                      />
-                      {/* Percentage text */}
-                      <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 font-bold text-gray-900 text-sm bg-white bg-opacity-80 px-2 py-1 rounded">
-                        {Math.min(stats?.latest?.value ?? 0, 100).toFixed(0)}%
-                      </span>
-                    </div>
-                    <p className="text-xs text-gray-500 font-medium">Reservoir Tank</p>
-                  </div>
-
-                  {/* Tank info */}
-                  <div className="space-y-3 flex-1">
-                    <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
-                      <p className="text-xs text-gray-600 mb-1">Current Level</p>
-                      <div className="flex items-baseline gap-2">
-                        <p className="text-2xl font-bold text-blue-600">{stats?.latest?.value.toFixed(1) ?? '—'}</p>
-                        <p className="text-sm text-gray-500">{stats?.latest?.unit}</p>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="bg-orange-50 rounded-lg p-3 border border-orange-100">
-                        <p className="text-xs text-gray-600 mb-1">Avg Level</p>
-                        <p className="text-lg font-bold text-orange-600">{stats?.average.toFixed(1)}</p>
-                      </div>
-                      <div className="bg-green-50 rounded-lg p-3 border border-green-100">
-                        <p className="text-xs text-gray-600 mb-1">Status</p>
-                        <p className={`text-sm font-bold ${(stats?.latest?.value ?? 0) > 70 ? 'text-green-600' : (stats?.latest?.value ?? 0) > 40 ? 'text-orange-600' : 'text-red-600'}`}>
-                          {(stats?.latest?.value ?? 0) > 70 ? 'Optimal' : (stats?.latest?.value ?? 0) > 40 ? 'Normal' : 'Low'}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <ReservoirCard />
 
               {/* Stats grid */}
               {stats && (
@@ -439,7 +395,7 @@ export default function DevicesDashboard() {
                     { label: 'Maximum', value: stats.max.toFixed(1), color: 'text-blue-600' },
                     { label: 'Minimum', value: stats.min.toFixed(1), color: 'text-sky-600' },
                     { label: 'Average', value: stats.average.toFixed(1), color: 'text-emerald-600' },
-                    { label: 'Latest', value: stats.latest?.value.toFixed(1) ?? '—', color: 'text-violet-600' },
+                    { label: 'Latest', value: stats.latest?.value.toFixed(1) ?? '—', color: 'text-blue-700' },
                   ].map(({ label, value, color }) => (
                     <div key={label} className="bg-white rounded-xl border border-gray-100 p-4">
                       <p className="text-[11px] font-semibold tracking-widest text-gray-400 uppercase mb-2">{label}</p>
@@ -449,6 +405,32 @@ export default function DevicesDashboard() {
                   ))}
                 </div>
               )}
+
+              {/* Hardware used */}
+              <div className="bg-white rounded-xl border border-gray-100 p-6">
+                <div className="flex items-center justify-between mb-5">
+                  <div>
+                    <h2 className="text-sm font-semibold text-gray-700">Matériel utilisé</h2>
+                    <p className="text-xs text-gray-500 mt-1">Montage physique connecté à cette solution de surveillance</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {hardwareItems.map((item) => (
+                    <div key={item.name} className={`rounded-xl border p-4 ${item.tone}`}>
+                      <div className="flex items-start gap-3">
+                        <span className="mt-0.5 inline-flex h-8 w-8 items-center justify-center rounded-lg bg-white/80 shadow-sm">
+                          {item.icon}
+                        </span>
+                        <div>
+                          <p className="font-semibold text-sm text-gray-900">{item.name}</p>
+                          <p className="text-xs text-gray-600 mt-1">{item.detail}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
 
               {/* Live readings */}
               <div className="bg-white rounded-xl border border-gray-100">
@@ -478,84 +460,6 @@ export default function DevicesDashboard() {
             </div>
           )}
         </main>
-      </div>
-
-      {/* ── Add Device Dialog ── */}
-      <Dialog open={showAddForm} onOpenChange={setShowAddForm}>
-        <DialogContent className="sm:max-w-[420px]">
-          <DialogHeader>
-            <DialogTitle>Add Water Reservoir</DialogTitle>
-            <DialogDescription>
-              Add a new water reservoir or sensor node to monitor
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="grid gap-4 py-2">
-            {/* Name */}
-            <div className="grid gap-1.5">
-              <label htmlFor="name" className="text-sm font-medium text-gray-700">
-                Reservoir Name
-              </label>
-              <input
-                id="name"
-                type="text"
-                placeholder="e.g., Main Tank, North Reservoir"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent transition"
-              />
-            </div>
-
-            {/* Type */}
-            <div className="grid gap-1.5">
-              <label htmlFor="type" className="text-sm font-medium text-gray-700">
-                Sensor Type
-              </label>
-              <select
-                id="type"
-                value={formData.type}
-                onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent bg-white transition"
-              >
-                <option value="waterLevel">Water Level Sensor</option>
-                <option value="temperature">Temperature Sensor</option>
-                <option value="turbidity">Turbidity Sensor</option>
-                <option value="ph">pH Sensor</option>
-                <option value="flowRate">Flow Rate Meter</option>
-                <option value="pressure">Pressure Gauge</option>
-              </select>
-            </div>
-
-            {/* Location */}
-            <div className="grid gap-1.5">
-              <label htmlFor="location" className="text-sm font-medium text-gray-700">
-                Location/Zone
-              </label>
-              <input
-                id="location"
-                type="text"
-                placeholder="e.g., Zone A, Building Intake"
-                value={formData.location}
-                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                className="px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent transition"
-              />
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowAddForm(false)}>
-              {t('dashboard.cancelAdd') || 'Cancel'}
-            </Button>
-            <Button
-              onClick={handleAddDevice}
-              disabled={isSubmitting}
-              className="bg-violet-600 hover:bg-violet-700 text-white"
-            >
-              {isSubmitting ? t('common.loading') || 'Creating…' : t('dashboard.createDevice')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </Layout>
   );
 }

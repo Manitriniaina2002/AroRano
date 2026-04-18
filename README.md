@@ -15,6 +15,23 @@ A modern **full-stack IoT application** built with **Next.js** (frontend) and **
 - ✅ CORS Enabled for Development
 - ✅ Type-Safe Frontend & Backend (TypeScript)
 
+## 🧰 Matériel utilisé
+
+Le système IoT réel d'AroRano utilise les composants suivants :
+
+- Capteur de pluie
+- Buzzer
+- LED rouge, verte et jaune
+- Pompe à eau
+- Relais 1 canal
+- ESP32
+- DHT22
+- Bouton poussoir
+- Capteur ultrason
+- Écran LCD
+
+Ces éléments permettent de mesurer l'état du réservoir, d'afficher les informations locales et de déclencher les actions physiques (pompe, alertes, indication visuelle).
+
 ## 📐 Architecture
 
 ```

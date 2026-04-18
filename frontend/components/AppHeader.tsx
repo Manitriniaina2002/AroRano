@@ -12,7 +12,7 @@ interface AppHeaderProps {
   title?: string;
 }
 
-export function AppHeader({ title = 'AroRano' }: AppHeaderProps) {
+export function AppHeader({ title: _title = 'AroRano' }: AppHeaderProps) {
   const [mounted, setMounted] = useState(false);
   const [language, setLanguage] = useState<Language>('en');
   const [showLanguageMenu, setShowLanguageMenu] = useState(false);
@@ -38,7 +38,7 @@ export function AppHeader({ title = 'AroRano' }: AppHeaderProps) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
         <div className="flex items-center gap-2">
           <Image
-            src="/images/logo.png"
+            src="/images/logo.PNG"
             alt="AroRano Logo"
             width={36}
             height={36}

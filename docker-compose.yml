@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD:-arorano_password}
       POSTGRES_DB: ${DB_NAME:-arorano}
     ports:
-      - "${DB_PORT:-5432}:5432"
+      - "5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -27,7 +27,7 @@ services:
     container_name: arorano-backend
     environment:
       NODE_ENV: production
-      DB_HOST: postgres
+      DB_HOST: arorano-postgres
       DB_PORT: 5432
       DB_USERNAME: ${DB_USERNAME:-arorano}
       DB_PASSWORD: ${DB_PASSWORD:-arorano_password}
@@ -50,7 +50,7 @@ services:
     container_name: arorano-frontend
     environment:
       NODE_ENV: production
-      NEXT_PUBLIC_API_URL: http://localhost:3001/api
+      NEXT_PUBLIC_API_URL: http://localhost:3001
       BACKEND_API_URL: http://backend:3001/api
     ports:
       - "3000:3000"

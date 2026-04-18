@@ -19,6 +19,31 @@ body {
   font-family: system-ui, -apple-system, sans-serif;
 }
 
+@keyframes reservoir-wave-move {
+  0% {
+    transform: translateX(-12%);
+  }
+
+  50% {
+    transform: translateX(12%);
+  }
+
+  100% {
+    transform: translateX(-12%);
+  }
+}
+
+@keyframes reservoir-wave-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(2px);
+  }
+}
+
 #__next {
   display: flex;
   flex-direction: column;
@@ -26,6 +51,24 @@ body {
 }
 
 @layer components {
+  .reservoir-wave {
+    border-radius: 9999px;
+    filter: blur(1px);
+    animation-iteration-count: infinite;
+    animation-timing-function: ease-in-out;
+  }
+
+  .reservoir-wave-1 {
+    animation: reservoir-wave-move 6s ease-in-out infinite;
+    opacity: 0.75;
+  }
+
+  .reservoir-wave-2 {
+    animation: reservoir-wave-move 7s ease-in-out infinite, reservoir-wave-bob 4s ease-in-out infinite;
+    opacity: 0.45;
+    mix-blend-mode: screen;
+  }
+
   .sidebar-link {
     @apply block w-full text-left px-4 py-3 rounded-lg transition-all duration-200;
   }
