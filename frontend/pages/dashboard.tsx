@@ -1,9 +1,10 @@
-'use client';
+﻿'use client';
 
 import React, { useEffect, useState } from 'react';
 import { api, Device, DeviceStats, SensorReading } from '@/lib/api';
 import { websocket, SensorReadingEvent } from '@/lib/websocket';
-import { t, getLanguage } from '@/lib/i18n';
+import { t } from '@/lib/i18n';
+import { useLanguage } from '@/lib/LanguageContext';
 import { Layout } from '@/components/Layout';
 import {
   FiTrendingUp,
@@ -18,6 +19,7 @@ import {
 export const dynamic = 'force-dynamic';
 
 export default function DevicesDashboard() {
+  const { language } = useLanguage();
   const [_devices, setDevices] = useState<Device[]>([]);
   const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
   const [stats, setStats] = useState<DeviceStats | null>(null);
@@ -26,7 +28,6 @@ export default function DevicesDashboard() {
   const [slowLoad, setSlowLoad] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [wsConnected, setWsConnected] = useState(false);
-  const [language, setLanguage] = useState('en');
 
   const deviceConfig: Record<string, { icon: React.ReactNode; colorClass: string; bgClass: string }> = {
     // Sensors
@@ -128,21 +129,20 @@ export default function DevicesDashboard() {
   };
 
   const hardwareItems = [
-    { name: 'rainSensor', detail: 'Détection des précipitations', icon: <FiCloud size={16} />, tone: 'bg-blue-50 text-blue-700 border-blue-100' },
-    { name: 'buzzer', detail: 'Alerte sonore', icon: <FiAlertCircle size={16} />, tone: 'bg-red-50 text-red-700 border-red-100' },
-    { name: 'ledRGB', detail: 'Signal visuel d’état', icon: <FiActivity size={16} />, tone: 'bg-amber-50 text-amber-700 border-amber-100' },
-    { name: 'Pompe à eau', detail: 'Actionnement du débit', icon: <FiZap size={16} />, tone: 'bg-cyan-50 text-cyan-700 border-cyan-100' },
-    { name: 'relay', detail: 'Commande de puissance', icon: <FiActivity size={16} />, tone: 'bg-slate-50 text-slate-700 border-slate-200' },
-    { name: 'esp32', detail: 'Microcontrôleur principal', icon: <FiZap size={16} />, tone: 'bg-blue-50 text-blue-700 border-blue-100' },
-    { name: 'dht22', detail: 'Température et humidité', icon: <FiTrendingUp size={16} />, tone: 'bg-emerald-50 text-emerald-700 border-emerald-100' },
-    { name: 'pushButton', detail: 'Commande manuelle', icon: <FiCheck size={16} />, tone: 'bg-indigo-50 text-indigo-700 border-indigo-100' },
-    { name: 'ultrasonic', detail: 'Mesure du niveau d’eau', icon: <FiCloud size={16} />, tone: 'bg-sky-50 text-sky-700 border-sky-100' },
-    { name: 'Écran LCD', detail: 'Affichage local', icon: <FiActivity size={16} />, tone: 'bg-violet-50 text-violet-700 border-violet-100' },
+    { key: 'rainSensor', icon: <FiCloud size={16} />, tone: 'bg-blue-50 text-blue-700 border-blue-100' },
+    { key: 'buzzer', icon: <FiAlertCircle size={16} />, tone: 'bg-red-50 text-red-700 border-red-100' },
+    { key: 'ledRGB', icon: <FiActivity size={16} />, tone: 'bg-amber-50 text-amber-700 border-amber-100' },
+    { key: 'waterPump', icon: <FiZap size={16} />, tone: 'bg-cyan-50 text-cyan-700 border-cyan-100' },
+    { key: 'relay', icon: <FiActivity size={16} />, tone: 'bg-slate-50 text-slate-700 border-slate-200' },
+    { key: 'esp32', icon: <FiZap size={16} />, tone: 'bg-blue-50 text-blue-700 border-blue-100' },
+    { key: 'dht22', icon: <FiTrendingUp size={16} />, tone: 'bg-emerald-50 text-emerald-700 border-emerald-100' },
+    { key: 'pushButton', icon: <FiCheck size={16} />, tone: 'bg-indigo-50 text-indigo-700 border-indigo-100' },
+    { key: 'ultrasonic', icon: <FiCloud size={16} />, tone: 'bg-sky-50 text-sky-700 border-sky-100' },
+    { key: 'lcdScreen', icon: <FiActivity size={16} />, tone: 'bg-violet-50 text-violet-700 border-violet-100' },
   ];
 
   // Initialize WebSocket connection and load data
   useEffect(() => {
-    setLanguage(getLanguage());
     const init = async () => {
       try {
         setLoading(true);
@@ -376,7 +376,7 @@ export default function DevicesDashboard() {
               <div className="w-12 h-12 rounded-2xl bg-blue-100 flex items-center justify-center mb-4 animate-spin">
                 <FiCloud size={22} className="text-blue-400" />
               </div>
-              <p className="text-gray-500 text-sm">Loading reservoirs...</p>
+              <p className="text-gray-500 text-sm">{t('dashboard.loadingReservoirs', language as 'en' | 'mg')}</p>
             </div>
           )}
 
@@ -385,8 +385,8 @@ export default function DevicesDashboard() {
               <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm">
               <FiAlertCircle size={18} className="text-amber-600 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="font-medium text-amber-800">Connection is slow</p>
-                <p className="text-amber-700 mt-0.5">You can add a reservoir manually while the backend reconnects.</p>
+                <p className="font-medium text-amber-800">{t('dashboard.connectionSlow', language as 'en' | 'mg')}</p>
+                <p className="text-amber-700 mt-0.5">{t('dashboard.addReservoirManually', language as 'en' | 'mg')}</p>
               </div>
             </div>
             </div>
@@ -398,7 +398,7 @@ export default function DevicesDashboard() {
               <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-xl text-sm">
               <FiAlertCircle size={18} className="text-red-500 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="font-medium text-red-700">{t('common.error')}</p>
+                <p className="font-medium text-red-700">{t('common.error', language as 'en' | 'mg')}</p>
                 <p className="text-red-600 mt-0.5">{error}</p>
               </div>
             </div>
@@ -412,14 +412,14 @@ export default function DevicesDashboard() {
                 <div className="w-12 h-12 rounded-2xl bg-blue-100 flex items-center justify-center mx-auto mb-4">
                   <FiCloud size={22} className="text-blue-400" />
                 </div>
-                <h1 className="text-lg font-semibold text-gray-900">Monitoring ready</h1>
-                <p className="text-gray-500 text-sm mt-1">A reservoir is shown here even before the first measurement arrives.</p>
+                <h1 className="text-lg font-semibold text-gray-900">{t('dashboard.monitoringReady', language as 'en' | 'mg')}</h1>
+                <p className="text-gray-500 text-sm mt-1">{t('dashboard.firstMeasurement', language as 'en' | 'mg')}</p>
               </div>
 
               <ReservoirCard />
 
               <div className="bg-white rounded-xl border border-gray-100 p-6 text-center">
-                <p className="text-gray-500 text-sm">No reservoirs available for monitoring yet</p>
+                <p className="text-gray-500 text-sm">{t('dashboard.noReservoirs', language as 'en' | 'mg')}</p>
               </div>
             </div>
           )}
@@ -447,8 +447,8 @@ export default function DevicesDashboard() {
                       : 'bg-gray-100 text-gray-500 border-gray-200'
                   }`}>
                     {wsConnected
-                      ? <><span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />{t('dashboard.websocketConnected')}</>
-                      : <><FiWifiOff size={12} />{t('dashboard.websocketDisconnected')}</>
+                      ? <><span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />{t('dashboard.websocketConnected', language as 'en' | 'mg')}</>
+                      : <><FiWifiOff size={12} />{t('dashboard.websocketDisconnected', language as 'en' | 'mg')}</>
                     }
                   </span>
                 </div>
@@ -485,14 +485,14 @@ export default function DevicesDashboard() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {hardwareItems.map((item) => (
-                    <div key={item.name} className={`rounded-xl border p-4 ${item.tone}`}>
+                    <div key={item.key} className={`rounded-xl border p-4 ${item.tone}`}>
                       <div className="flex items-start gap-3">
                         <span className="mt-0.5 inline-flex h-8 w-8 items-center justify-center rounded-lg bg-white/80 shadow-sm">
                           {item.icon}
                         </span>
                         <div>
-                          <p className="font-semibold text-sm text-gray-900">{t(`deviceTypes.${item.name}`)}</p>
-                          <p className="text-xs text-gray-600 mt-1">{item.detail}</p>
+                          <p className="font-semibold text-sm text-gray-900">{t(`hardware.${item.key}.name`, language as 'en' | 'mg')}</p>
+                          <p className="text-xs text-gray-600 mt-1">{t(`hardware.${item.key}.detail`, language as 'en' | 'mg')}</p>
                         </div>
                       </div>
                     </div>
@@ -504,11 +504,11 @@ export default function DevicesDashboard() {
               <div className="bg-white rounded-xl border border-gray-100">
                 <div className="flex items-center gap-2 px-5 py-4 border-b border-gray-100">
                   <FiTrendingUp size={15} className="text-blue-500" />
-                  <h2 className="text-sm font-semibold text-gray-700">{t('dashboard.liveReadings')}</h2>
+                  <h2 className="text-sm font-semibold text-gray-700">{t('dashboard.liveReadings', language as 'en' | 'mg')}</h2>
                   <span className="ml-auto w-2 h-2 rounded-full bg-green-400 animate-pulse" />
                 </div>
                 {realtimeReadings.length === 0 ? (
-                  <p className="text-sm text-gray-400 text-center py-10">{t('dashboard.noReadings')}</p>
+                  <p className="text-sm text-gray-400 text-center py-10">{t('dashboard.noReadings', language as 'en' | 'mg')}</p>
                 ) : (
                   <div className="divide-y divide-gray-50 max-h-72 overflow-y-auto">
                     {realtimeReadings.map((reading, idx) => (
@@ -531,4 +531,10 @@ export default function DevicesDashboard() {
     </Layout>
   );
 }
+
+
+
+
+
+
 

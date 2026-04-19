@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { FiGlobe, FiChevronDown } from 'react-icons/fi';
 import { useLanguage } from '@/lib/LanguageContext';
-import { getAvailableLanguages } from '@/lib/i18n';
+import { getAvailableLanguages, t } from '@/lib/i18n';
 
 interface AppHeaderProps {
   title?: string;
@@ -25,8 +25,6 @@ function AppHeaderContent({ title: _title = 'AroRano' }: AppHeaderProps) {
   const handleLanguageChange = (newLang: 'en' | 'mg') => {
     setLanguage(newLang);
     setShowLanguageMenu(false);
-    // Reload to apply language changes throughout the app
-    window.location.reload();
   };
 
   const currentLangLabel = availableLanguages.find((l) => l.code === contextLanguage)?.nativeName || contextLanguage.toUpperCase();
@@ -37,7 +35,7 @@ function AppHeaderContent({ title: _title = 'AroRano' }: AppHeaderProps) {
         <div className="flex items-center gap-2">
           <Image
             src="/images/logo.PNG"
-            alt="AroRano Logo"
+            alt={t('common.logoAlt', contextLanguage as 'en' | 'mg')}
             width={36}
             height={36}
             className="w-9 h-9 object-contain"

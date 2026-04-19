@@ -4,7 +4,8 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { api, HealthResponse, WelcomeResponse } from '@/lib/api';
-import { t, getLanguage } from '@/lib/i18n';
+import { t } from '@/lib/i18n';
+import { useLanguage } from '@/lib/LanguageContext';
 import { Layout } from '@/components/Layout';
 import { WaveAnimation } from '@/components/WaveAnimation';
 import { FiArrowRight, FiCheckCircle, FiAlertCircle, FiLoader, FiDroplet, FiActivity, FiTrendingUp } from 'react-icons/fi';
@@ -12,14 +13,28 @@ import { FiArrowRight, FiCheckCircle, FiAlertCircle, FiLoader, FiDroplet, FiActi
 export const dynamic = 'force-dynamic';
 
 export default function Home() {
+  const { language } = useLanguage();
   const [health, setHealth] = useState<HealthResponse | null>(null);
   const [message, setMessage] = useState<WelcomeResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [language, setLanguage] = useState('en');
+
+  const translatedHealthStatus =
+    health?.status?.toLowerCase() === 'ok'
+      ? t('common.ok', language as 'en' | 'mg')
+      : health?.status;
+
+  const translatedHealthMessage =
+    health?.message?.toLowerCase() === 'server is running'
+      ? t('common.serverRunning', language as 'en' | 'mg')
+      : health?.message;
+
+  const translatedWelcomeMessage =
+    message?.message?.toLowerCase() === 'welcome to arorano api!'
+      ? t('api.welcome', language as 'en' | 'mg')
+      : message?.message;
 
   useEffect(() => {
-    setLanguage(getLanguage());
     const fetchData = async () => {
       try {
         setLoading(true);
@@ -69,8 +84,8 @@ export default function Home() {
       <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Introduction */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-3">{t('home.smartWaterMonitoring')}</h1>
-          <p className="text-lg text-gray-600">{t('home.realtimeMonitoringDesc')}</p>
+          <h1 className="text-4xl font-bold text-gray-900 mb-3">{t('home.smartWaterMonitoring', language as 'en' | 'mg')}</h1>
+          <p className="text-lg text-gray-600">{t('home.realtimeMonitoringDesc', language as 'en' | 'mg')}</p>
         </div>
 
         {/* Key Features - Simplified */}
@@ -79,24 +94,24 @@ export default function Home() {
             <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center mb-3">
               <FiDroplet size={20} className="text-blue-600" />
             </div>
-            <h3 className="font-semibold text-gray-900 mb-1">{t('home.realtimeMonitoring')}</h3>
-            <p className="text-sm text-gray-600">{t('home.realtimeMonitoringDetail')}</p>
+            <h3 className="font-semibold text-gray-900 mb-1">{t('home.realtimeMonitoring', language as 'en' | 'mg')}</h3>
+            <p className="text-sm text-gray-600">{t('home.realtimeMonitoringDetail', language as 'en' | 'mg')}</p>
           </div>
 
           <div className="bg-white rounded-lg border border-cyan-100 p-6">
             <div className="w-10 h-10 bg-cyan-50 rounded-lg flex items-center justify-center mb-3">
               <FiActivity size={20} className="text-cyan-600" />
             </div>
-            <h3 className="font-semibold text-gray-900 mb-1">{t('home.multiSensorSupport')}</h3>
-            <p className="text-sm text-gray-600">{t('home.multiSensorDetail')}</p>
+            <h3 className="font-semibold text-gray-900 mb-1">{t('home.multiSensorSupport', language as 'en' | 'mg')}</h3>
+            <p className="text-sm text-gray-600">{t('home.multiSensorDetail', language as 'en' | 'mg')}</p>
           </div>
 
           <div className="bg-white rounded-lg border border-teal-100 p-6">
             <div className="w-10 h-10 bg-teal-50 rounded-lg flex items-center justify-center mb-3">
               <FiTrendingUp size={20} className="text-teal-600" />
             </div>
-            <h3 className="font-semibold text-gray-900 mb-1">{t('home.smartAlerts')}</h3>
-            <p className="text-sm text-gray-600">{t('home.smartAlertsDetail')}</p>
+            <h3 className="font-semibold text-gray-900 mb-1">{t('home.smartAlerts', language as 'en' | 'mg')}</h3>
+            <p className="text-sm text-gray-600">{t('home.smartAlertsDetail', language as 'en' | 'mg')}</p>
           </div>
         </div>
 
@@ -110,8 +125,8 @@ export default function Home() {
                   <FiCheckCircle size={20} className="text-green-700" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-semibold text-green-900 mb-1">System Status</h3>
-                  <p className="text-sm text-green-800">{health.status} • {health.message}</p>
+                  <h3 className="font-semibold text-green-900 mb-1">{t('home.systemStatus', language as 'en' | 'mg')}</h3>
+                  <p className="text-sm text-green-800">{translatedHealthStatus} • {translatedHealthMessage}</p>
                 </div>
               </div>
             </div>
@@ -125,8 +140,8 @@ export default function Home() {
                   <FiDroplet size={20} className="text-blue-700" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-semibold text-blue-900 mb-1">Welcome</h3>
-                  <p className="text-sm text-blue-800">{message.message}</p>
+                  <h3 className="font-semibold text-blue-900 mb-1">{t('home.welcome', language as 'en' | 'mg')}</h3>
+                  <p className="text-sm text-blue-800">{translatedWelcomeMessage}</p>
                 </div>
               </div>
             </div>
@@ -139,7 +154,7 @@ export default function Home() {
                   <FiAlertCircle size={20} className="text-red-700" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-semibold text-red-900 mb-1">Connection Issue</h3>
+                  <h3 className="font-semibold text-red-900 mb-1">{t('home.connectionIssue', language as 'en' | 'mg')}</h3>
                   <p className="text-sm text-red-800">{error}</p>
                 </div>
               </div>
@@ -153,8 +168,8 @@ export default function Home() {
                   <FiLoader size={20} className="text-gray-700" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900 mb-1">Initializing</h3>
-                  <p className="text-sm text-gray-700">Loading system data...</p>
+                  <h3 className="font-semibold text-gray-900 mb-1">{t('home.initializing', language as 'en' | 'mg')}</h3>
+                  <p className="text-sm text-gray-700">{t('home.loadingSystemData', language as 'en' | 'mg')}</p>
                 </div>
               </div>
             </div>
@@ -163,13 +178,13 @@ export default function Home() {
 
         {/* CTA Section */}
         <div className="mt-12 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-lg p-8 text-white text-center">
-          <h2 className="text-2xl font-bold mb-2">Start Monitoring Now</h2>
-          <p className="text-sm opacity-90 mb-5">Access real-time reservoir data and insights</p>
+          <h2 className="text-2xl font-bold mb-2">{t('home.startMonitoring', language as 'en' | 'mg')}</h2>
+          <p className="text-sm opacity-90 mb-5">{t('home.accessData', language as 'en' | 'mg')}</p>
           <Link 
             href="/dashboard" 
             className="inline-flex items-center gap-2 bg-white text-blue-600 px-5 py-2 rounded-lg font-semibold hover:bg-gray-100 transition-colors text-sm"
           >
-            Go to Dashboard
+            {t('home.goToDashboard', language as 'en' | 'mg')}
             <FiArrowRight size={16} />
           </Link>
         </div>

@@ -1,332 +1,505 @@
-/**
- * ESP32 Integration Guide for AroRano IoT System
- * 
- * This file provides documentation for integrating the ESP32 microcontroller
- * with the AroRano backend API.
- */
+# ESP32 Reservoir Data Integration
 
-// ============================================================================
-// 1. API ENDPOINTS FOR SENDING SENSOR DATA
-// ============================================================================
+## Overview
 
-/**
- * POST /api/devices/{deviceId}/readings
- * Add a sensor reading to a device
- * 
- * Request Body:
- * {
- *   "value": 45.5,        // Numeric sensor value
- *   "unit": "%"            // Unit of measurement (%, °C, cm, mm, etc.)
- * }
- * 
- * Response:
- * {
- *   "id": "uuid",
- *   "deviceId": "uuid",
- *   "value": 45.5,
- *   "unit": "%",
- *   "timestamp": "2026-04-18T10:30:00.000Z"
- * }
- * 
- * Example cURL:
- * curl -X POST http://localhost:3001/api/devices/{deviceId}/readings \
- *   -H "Content-Type: application/json" \
- *   -d '{"value": 45.5, "unit": "%"}'
- */
+This document describes the integration for receiving and processing ESP32 sensor data (water level, temperature, humidity, rain detection, pump status, and alerts) from IoT reservoir monitoring devices.
 
-// ============================================================================
-// 2. DEVICE TYPES AND THEIR EXPECTED UNITS
-// ============================================================================
+## Database Schema
 
-const DEVICE_UNITS = {
-  rainSensor: 'mm',              // Millimeters of rainfall
-  ultrasonic: 'cm',             // Centimeters (water level distance)
-  dht22: '°C / %',              // Temperature (°C) or Humidity (%)
-  waterPump: 'state',           // ON/OFF (1/0)
-  relay: 'state',               // ON/OFF (1/0)
-  buzzer: 'state',              // ON/OFF (1/0)
-  ledRGB: 'color',              // Color code (e.g., "RED", "GREEN", "YELLOW")
-  lcdScreen: 'display',         // Text content
-  pushButton: 'state',          // PRESSED/RELEASED (1/0)
-  waterLevel: '%',              // Percentage (0-100)
-};
+### ESP32Reading Entity
 
-// ============================================================================
-// 3. ESP32 EXAMPLE CODE (Arduino)
-// ============================================================================
+The `esp32_readings` table stores all sensor data from ESP32 devices:
 
-const ESP32_EXAMPLE_CODE = `
+```
+Column                Type        Constraints
+------                ----        -----------
+id                    uuid        PRIMARY KEY
+deviceId              varchar     Indexed, Foreign Key concept
+timestamp             timestamp   When data was collected by ESP32
+waterLevelCm          float       Water level in centimeters
+waterLevelPercent     smallint    Water level percentage (0-100)
+temperature           float       Temperature in °C
+humidity              smallint    Humidity percentage (0-100)
+rainDetected          boolean     Rain detection status
+pumpStatus            varchar     'ON' or 'OFF'
+alert                 varchar     'NORMAL', 'WARNING', 'CRITICAL'
+createdAt             timestamp   Server-side ingestion timestamp
+```
+
+**Indexes:**
+- `(deviceId, createdAt)` - For efficient time-series queries
+- `(deviceId)` - For device-specific lookups
+
+## API Endpoints
+
+### 1. Receive ESP32 Data
+
+**POST** `/api/esp32/data`
+
+Receive real-time sensor data from ESP32 device.
+
+**Request Body:**
+```json
+{
+  "device_id": "reservoir_01",
+  "timestamp": "2026-04-19T06:30:00Z",
+  "water_level_cm": 35.2,
+  "water_level_percent": 68,
+  "temperature": 27.5,
+  "humidity": 75,
+  "rain_detected": false,
+  "pump_status": "OFF",
+  "alert": "NORMAL"
+}
+```
+
+**Response (201 Created):**
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "deviceId": "reservoir_01",
+  "timestamp": "2026-04-19T06:30:00Z",
+  "waterLevelCm": 35.2,
+  "waterLevelPercent": 68,
+  "temperature": 27.5,
+  "humidity": 75,
+  "rainDetected": false,
+  "pumpStatus": "OFF",
+  "alert": "NORMAL",
+  "createdAt": "2026-04-19T06:30:15Z"
+}
+```
+
+---
+
+### 2. Get All Devices
+
+**GET** `/api/esp32/devices`
+
+List all devices that have sent data.
+
+**Response:**
+```json
+{
+  "devices": ["reservoir_01", "reservoir_02", "weather_station_01"]
+}
+```
+
+---
+
+### 3. Get Latest Reading
+
+**GET** `/api/esp32/devices/{deviceId}/latest`
+
+Get the most recent sensor reading from a device.
+
+**Example:** `GET /api/esp32/devices/reservoir_01/latest`
+
+**Response:**
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "deviceId": "reservoir_01",
+  "timestamp": "2026-04-19T06:30:00Z",
+  "waterLevelCm": 35.2,
+  "waterLevelPercent": 68,
+  "temperature": 27.5,
+  "humidity": 75,
+  "rainDetected": false,
+  "pumpStatus": "OFF",
+  "alert": "NORMAL",
+  "createdAt": "2026-04-19T06:30:15Z"
+}
+```
+
+---
+
+### 4. Get Paginated Readings
+
+**GET** `/api/esp32/devices/{deviceId}/readings?limit=100&offset=0`
+
+Get paginated sensor readings from a device (ordered by most recent first).
+
+**Query Parameters:**
+- `limit` (default: 100, max: 1000) - Number of readings to return
+- `offset` (default: 0) - Pagination offset
+
+**Example:** `GET /api/esp32/devices/reservoir_01/readings?limit=50&offset=0`
+
+**Response:**
+```json
+{
+  "data": [
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "deviceId": "reservoir_01",
+      "timestamp": "2026-04-19T06:30:00Z",
+      "waterLevelCm": 35.2,
+      "waterLevelPercent": 68,
+      "temperature": 27.5,
+      "humidity": 75,
+      "rainDetected": false,
+      "pumpStatus": "OFF",
+      "alert": "NORMAL",
+      "createdAt": "2026-04-19T06:30:15Z"
+    }
+    // ... more readings
+  ],
+  "total": 1250
+}
+```
+
+---
+
+### 5. Get Readings by Date Range
+
+**GET** `/api/esp32/devices/{deviceId}/readings/range?startDate=2026-04-18T00:00:00Z&endDate=2026-04-19T23:59:59Z`
+
+Get sensor readings within a specific date range.
+
+**Query Parameters:**
+- `startDate` (required) - ISO 8601 format, e.g., `2026-04-19T00:00:00Z`
+- `endDate` (required) - ISO 8601 format
+
+**Example:** `GET /api/esp32/devices/reservoir_01/readings/range?startDate=2026-04-18T00:00:00Z&endDate=2026-04-19T23:59:59Z`
+
+**Response:**
+```json
+[
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "deviceId": "reservoir_01",
+    "timestamp": "2026-04-19T06:30:00Z",
+    "waterLevelCm": 35.2,
+    "waterLevelPercent": 68,
+    "temperature": 27.5,
+    "humidity": 75,
+    "rainDetected": false,
+    "pumpStatus": "OFF",
+    "alert": "NORMAL",
+    "createdAt": "2026-04-19T06:30:15Z"
+  }
+  // ... more readings
+]
+```
+
+---
+
+### 6. Get Device Statistics
+
+**GET** `/api/esp32/devices/{deviceId}/stats?hoursBack=24`
+
+Get aggregated statistics for a device over a time period.
+
+**Query Parameters:**
+- `hoursBack` (default: 24, range: 1-8760) - Number of hours to look back
+
+**Example:** `GET /api/esp32/devices/reservoir_01/stats?hoursBack=24`
+
+**Response:**
+```json
+{
+  "avgWaterLevelCm": 35.5,
+  "avgWaterLevelPercent": 68,
+  "avgTemperature": 27.2,
+  "avgHumidity": 74,
+  "maxWaterLevelCm": 42.1,
+  "minWaterLevelCm": 28.3,
+  "maxTemperature": 31.5,
+  "minTemperature": 22.1,
+  "rainDetectedCount": 3,
+  "totalReadings": 96,
+  "latestAlert": "NORMAL",
+  "latestPumpStatus": "OFF"
+}
+```
+
+---
+
+### 7. Health Check
+
+**GET** `/api/esp32/health`
+
+Simple health check for the ESP32 API.
+
+**Response:**
+```json
+{
+  "status": "OK",
+  "timestamp": "2026-04-19T06:30:15Z"
+}
+```
+
+---
+
+## Real-Time WebSocket Events
+
+When data is received, the system broadcasts events to connected WebSocket clients:
+
+### Device Subscription
+
+Subscribe to device-specific updates:
+```javascript
+socket.emit('subscribe', { deviceId: 'reservoir_01' });
+```
+
+### Events
+
+**`esp32Reading`** - New ESP32 reading for subscribed device
+```json
+{
+  "deviceId": "reservoir_01",
+  "reading": { /* ESP32ReadingResponseDto */ },
+  "timestamp": "2026-04-19T06:30:15Z"
+}
+```
+
+**`esp32ReadingGlobal`** - New ESP32 reading (broadcast to all clients)
+```json
+{
+  "deviceId": "reservoir_01",
+  "reading": { /* ESP32ReadingResponseDto */ },
+  "timestamp": "2026-04-19T06:30:15Z"
+}
+```
+
+**`deviceAlert`** - Alert from device (broadcast to all clients)
+```json
+{
+  "deviceId": "reservoir_01",
+  "alert": "WARNING",
+  "timestamp": "2026-04-19T06:30:15Z"
+}
+```
+
+---
+
+## Data Validation
+
+The API validates incoming data with the following rules:
+
+| Field | Validation |
+|-------|-----------|
+| `device_id` | Required, string |
+| `timestamp` | Required, ISO 8601 date |
+| `water_level_cm` | Required, number >= 0 |
+| `water_level_percent` | Required, number 0-100 |
+| `temperature` | Required, number |
+| `humidity` | Required, number 0-100 |
+| `rain_detected` | Required, boolean |
+| `pump_status` | Required, 'ON' \| 'OFF' |
+| `alert` | Required, 'NORMAL' \| 'WARNING' \| 'CRITICAL' |
+
+---
+
+## Usage Examples
+
+### cURL Examples
+
+**Send Data:**
+```bash
+curl -X POST http://localhost:3001/api/esp32/data \
+  -H "Content-Type: application/json" \
+  -d '{
+    "device_id": "reservoir_01",
+    "timestamp": "2026-04-19T06:30:00Z",
+    "water_level_cm": 35.2,
+    "water_level_percent": 68,
+    "temperature": 27.5,
+    "humidity": 75,
+    "rain_detected": false,
+    "pump_status": "OFF",
+    "alert": "NORMAL"
+  }'
+```
+
+**Get Latest Reading:**
+```bash
+curl http://localhost:3001/api/esp32/devices/reservoir_01/latest
+```
+
+**Get Statistics:**
+```bash
+curl http://localhost:3001/api/esp32/devices/reservoir_01/stats?hoursBack=24
+```
+
+### JavaScript/Node.js Example
+
+```typescript
+// Send ESP32 data
+async function sendESP32Data() {
+  const response = await fetch('http://localhost:3001/api/esp32/data', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      device_id: 'reservoir_01',
+      timestamp: new Date().toISOString(),
+      water_level_cm: 35.2,
+      water_level_percent: 68,
+      temperature: 27.5,
+      humidity: 75,
+      rain_detected: false,
+      pump_status: 'OFF',
+      alert: 'NORMAL',
+    }),
+  });
+  
+  const data = await response.json();
+  console.log('Data stored:', data);
+}
+
+// Subscribe to real-time updates
+import io from 'socket.io-client';
+
+const socket = io('http://localhost:3001', {
+  transports: ['websocket', 'polling'],
+});
+
+socket.on('connect', () => {
+  socket.emit('subscribe', { deviceId: 'reservoir_01' });
+});
+
+socket.on('esp32Reading', (event) => {
+  console.log('New reading:', event.reading);
+});
+
+socket.on('deviceAlert', (event) => {
+  console.log('Alert:', event.alert);
+});
+```
+
+---
+
+## ESP32 Code Example
+
+Example Arduino code for ESP32 to send data to the backend:
+
+```cpp
 #include <WiFi.h>
 #include <HTTPClient.h>
-#include <DHT.h>
+#include <ArduinoJson.h>
 
-// WiFi Credentials
 const char* ssid = "YOUR_SSID";
 const char* password = "YOUR_PASSWORD";
-
-// Backend Configuration
-const char* backendUrl = "http://192.168.X.X:3001";
-String deviceIds[10]; // Store device IDs from backend
-
-// Pins
-#define DHT_PIN 4
-#define ULTRASONIC_TRIG 5
-#define ULTRASONIC_ECHO 18
-#define RAIN_SENSOR_PIN 34  // ADC pin
-
-DHT dht22(DHT_PIN, DHT22);
+const char* serverUrl = "http://YOUR_BACKEND_IP:3001/api/esp32/data";
+const char* deviceId = "reservoir_01";
 
 void setup() {
   Serial.begin(115200);
-  delay(1000);
-  
   WiFi.begin(ssid, password);
-  Serial.print("Connecting to WiFi...");
   
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
   }
   
-  Serial.println("\\nConnected!");
-  Serial.println("IP: " + WiFi.localIP().toString());
-  
-  // Initialize sensors
-  dht22.begin();
-  pinMode(ULTRASONIC_TRIG, OUTPUT);
-  pinMode(ULTRASONIC_ECHO, INPUT);
-  
-  // Fetch device list from backend
-  fetchDeviceIds();
+  Serial.println("Connected to WiFi");
 }
 
 void loop() {
-  // Read DHT22 (Temperature)
-  float temp = dht22.readTemperature();
-  if (!isnan(temp)) {
-    sendSensorReading("dht22", temp, "°C");
-  }
-  
-  // Read DHT22 (Humidity)
-  float humidity = dht22.readHumidity();
-  if (!isnan(humidity)) {
-    sendSensorReading("dht22", humidity, "%");
-  }
-  
-  // Read Ultrasonic Water Level
-  float distance = measureUltrasonicDistance();
-  if (distance > 0) {
-    sendSensorReading("ultrasonic", distance, "cm");
-  }
-  
-  // Read Rain Sensor
-  int rainValue = analogRead(RAIN_SENSOR_PIN);
-  float rainfall = rainValue * (500.0 / 4095.0); // Convert ADC to mm
-  sendSensorReading("rainSensor", rainfall, "mm");
-  
-  delay(5000); // Send readings every 5 seconds
-}
-
-void sendSensorReading(const char* deviceType, float value, const char* unit) {
-  if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("WiFi not connected!");
-    return;
-  }
-  
-  // Find device ID by type
-  String deviceId = getDeviceIdByType(deviceType);
-  if (deviceId.isEmpty()) {
-    Serial.println("Device not found: " + String(deviceType));
-    return;
-  }
-  
-  HTTPClient http;
-  String url = String(backendUrl) + "/api/devices/" + deviceId + "/readings";
-  
-  http.begin(url);
-  http.addHeader("Content-Type", "application/json");
+  // Read sensors
+  float waterLevelCm = readWaterLevel();
+  int waterLevelPercent = (int)(waterLevelCm / 50.0 * 100);
+  float temperature = readTemperature();
+  int humidity = readHumidity();
+  bool rainDetected = checkRain();
+  String pumpStatus = isPumpOn() ? "ON" : "OFF";
+  String alert = getAlertStatus();
   
   // Create JSON payload
-  String payload = "{\"value\":" + String(value) + ",\"unit\":\"" + String(unit) + "\"}";
+  DynamicJsonDocument doc(256);
+  doc["device_id"] = deviceId;
+  doc["timestamp"] = getISOTimestamp();
+  doc["water_level_cm"] = waterLevelCm;
+  doc["water_level_percent"] = waterLevelPercent;
+  doc["temperature"] = temperature;
+  doc["humidity"] = humidity;
+  doc["rain_detected"] = rainDetected;
+  doc["pump_status"] = pumpStatus;
+  doc["alert"] = alert;
   
-  int httpResponseCode = http.POST(payload);
-  
-  if (httpResponseCode > 0) {
-    String response = http.getString();
-    Serial.println("✓ Sent " + String(deviceType) + ": " + String(value) + unit);
-    Serial.println("Response: " + response);
-  } else {
-    Serial.println("✗ HTTP Error: " + String(httpResponseCode));
+  // Send to server
+  if (WiFi.status() == WL_CONNECTED) {
+    HTTPClient http;
+    http.begin(serverUrl);
+    http.addHeader("Content-Type", "application/json");
+    
+    String payload;
+    serializeJson(doc, payload);
+    
+    int httpResponseCode = http.POST(payload);
+    
+    if (httpResponseCode > 0) {
+      Serial.println("Data sent successfully");
+    } else {
+      Serial.println("Error sending data");
+    }
+    
+    http.end();
   }
   
-  http.end();
+  // Send every 5 minutes
+  delay(300000);
 }
+```
 
-float measureUltrasonicDistance() {
-  // Send trigger pulse
-  digitalWrite(ULTRASONIC_TRIG, LOW);
-  delayMicroseconds(2);
-  digitalWrite(ULTRASONIC_TRIG, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(ULTRASONIC_TRIG, LOW);
-  
-  // Measure echo time
-  long duration = pulseIn(ULTRASONIC_ECHO, HIGH);
-  float distance = (duration * 0.034) / 2; // Convert to cm
-  
-  return distance;
+---
+
+## Data Retention Policy
+
+Old readings can be deleted using the `deleteOldReadings` method in the service:
+
+```typescript
+// Delete readings older than 30 days
+await esp32Service.deleteOldReadings(30);
+```
+
+Consider setting up a scheduled job (cron) to periodically clean up old data:
+
+```typescript
+// In your cron service
+@Cron('0 0 * * *') // Run daily at midnight
+async cleanupOldData() {
+  await this.esp32Service.deleteOldReadings(30);
 }
+```
 
-void fetchDeviceIds() {
-  HTTPClient http;
-  String url = String(backendUrl) + "/api/devices";
-  
-  http.begin(url);
-  int httpResponseCode = http.GET();
-  
-  if (httpResponseCode == 200) {
-    String response = http.getString();
-    // Parse JSON and store device IDs (use ArduinoJson library for proper parsing)
-    Serial.println("Devices fetched from backend");
-  }
-  
-  http.end();
+---
+
+## Security Considerations
+
+1. **API Authentication** - Consider adding JWT or API key authentication to the `/api/esp32/data` endpoint
+2. **Rate Limiting** - Implement rate limiting to prevent spam
+3. **Input Validation** - All input is validated using class-validator
+4. **CORS** - Configured to allow requests from frontend domain
+5. **WebSocket Authentication** - Secure WebSocket connections with authentication tokens
+
+Example secure endpoint:
+
+```typescript
+@Post('data')
+@UseGuards(AuthGuard('jwt'))
+async receiveData(@Body() dto: CreateESP32ReadingDto): Promise<ESP32Reading> {
+  return await this.esp32Service.receiveESP32Data(dto);
 }
+```
 
-String getDeviceIdByType(const char* deviceType) {
-  // This would be implemented with proper JSON parsing
-  // For now, return a placeholder
-  return "device-uuid-here";
-}
-`;
+---
 
-// ============================================================================
-// 4. HTTP REQUEST EXAMPLES
-// ============================================================================
+## Troubleshooting
 
-const REQUEST_EXAMPLES = {
-  // Get all devices
-  getAllDevices: {
-    method: 'GET',
-    url: 'http://localhost:3001/api/devices',
-    response: [
-      {
-        id: 'uuid-1',
-        name: 'Capteur Ultrasonic',
-        type: 'ultrasonic',
-        location: 'Réservoir d\'eau',
-        status: 'active',
-      },
-    ],
-  },
+### Data not being stored
+- Check database connection in environment variables
+- Verify device ID format matches expectations
+- Check server logs for validation errors
 
-  // Send ultrasonic reading (water level)
-  sendUltrasonicReading: {
-    method: 'POST',
-    url: 'http://localhost:3001/api/devices/{deviceId}/readings',
-    body: {
-      value: 125.5, // cm from bottom of tank
-      unit: 'cm',
-    },
-    response: {
-      id: 'reading-uuid',
-      deviceId: 'device-uuid',
-      value: 125.5,
-      unit: 'cm',
-      timestamp: '2026-04-18T10:30:00.000Z',
-    },
-  },
+### WebSocket not broadcasting
+- Ensure WebSocket server is initialized
+- Verify client is subscribed to correct device ID
+- Check CORS configuration
 
-  // Send DHT22 temperature reading
-  sendTemperatureReading: {
-    method: 'POST',
-    url: 'http://localhost:3001/api/devices/{deviceId}/readings',
-    body: {
-      value: 28.5,
-      unit: '°C',
-    },
-  },
+### Performance issues
+- Increase database indexes
+- Implement data archiving for old records
+- Consider time-series database (TimescaleDB) for large datasets
 
-  // Send rain sensor reading
-  sendRainfallReading: {
-    method: 'POST',
-    url: 'http://localhost:3001/api/devices/{deviceId}/readings',
-    body: {
-      value: 12.3,
-      unit: 'mm',
-    },
-  },
-
-  // Get device statistics
-  getDeviceStats: {
-    method: 'GET',
-    url: 'http://localhost:3001/api/devices/{deviceId}/stats',
-    response: {
-      average: 125.2,
-      min: 120.1,
-      max: 130.5,
-      latest: {
-        id: 'reading-uuid',
-        deviceId: 'device-uuid',
-        value: 125.5,
-        unit: 'cm',
-        timestamp: '2026-04-18T10:30:00.000Z',
-      },
-    },
-  },
-
-  // Get device readings (last 100)
-  getDeviceReadings: {
-    method: 'GET',
-    url: 'http://localhost:3001/api/devices/{deviceId}/readings',
-    response: [
-      {
-        id: 'reading-uuid-1',
-        deviceId: 'device-uuid',
-        value: 125.5,
-        unit: 'cm',
-        timestamp: '2026-04-18T10:30:00.000Z',
-      },
-      {
-        id: 'reading-uuid-2',
-        deviceId: 'device-uuid',
-        value: 124.8,
-        unit: 'cm',
-        timestamp: '2026-04-18T10:25:00.000Z',
-      },
-    ],
-  },
-};
-
-// ============================================================================
-// 5. SETUP & INITIALIZATION
-// ============================================================================
-
-const SETUP_STEPS = `
-1. Flash ESP32 with the provided Arduino code
-2. Update WiFi credentials in the code
-3. Connect ESP32 to WiFi network
-4. Run: npm run seed  (in backend directory to create devices)
-5. Verify ESP32 IP address in Serial monitor
-6. ESP32 will start sending readings every 5 seconds
-7. Open http://localhost:3000/dashboard to see real-time data
-
-PIN CONFIGURATION:
-- DHT22 (Temp/Humidity):     GPIO 4
-- Ultrasonic Trigger:         GPIO 5
-- Ultrasonic Echo:            GPIO 18
-- Rain Sensor ADC:            GPIO 34
-- Relay/Pump Control:         GPIO 12
-- Buzzer:                      GPIO 25
-- LED Red:                     GPIO 26
-- LED Green:                   GPIO 27
-- LED Yellow:                  GPIO 32
-- Push Button:                 GPIO 35
-`;
-
-export {
-  DEVICE_UNITS,
-  ESP32_EXAMPLE_CODE,
-  REQUEST_EXAMPLES,
-  SETUP_STEPS,
-};

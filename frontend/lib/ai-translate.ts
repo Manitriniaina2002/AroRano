@@ -3,10 +3,21 @@
  * Provides automatic translation to Malagasy using free APIs and cached translations
  */
 
+import { lookupGlossary } from './translation-glossary';
+
 const TRANSLATION_CACHE: Map<string, string> = new Map();
 
 // Use LibreTranslate API (free, open-source)
 const LIBRE_TRANSLATE_URL = 'https://libretranslate.de/translate';
+
+function shouldPreserveEnglish(text: string): boolean {
+  const normalized = text.trim();
+  if (!normalized) return true;
+
+  // Keep short UI terms in English unless we have a known Malagasy equivalent.
+  const wordCount = normalized.split(/\s+/).length;
+  return wordCount <= 4;
+}
 
 // Fallback manual translations for common UI terms
 const MANUAL_TRANSLATIONS: Record<string, string> = {
@@ -101,19 +112,59 @@ export function getUserLanguage(): 'en' | 'mg' {
 /**
  * Translate text using LibreTranslate API with fallback
  */
-export async function translateText(text: string, targetLang: 'en' | 'mg' = 'mg'): Promise<string> {
+export async function translateText(text: string, targetLang: 'en' | 'mg' | 'tdx' = 'mg'): Promise<string> {
   if (targetLang === 'en' || !text) return text;
   
-  // Check manual translations first
-  const cacheKey = `${text}->mg`;
+  const cacheKey = `${text}->${targetLang}`;
   if (TRANSLATION_CACHE.has(cacheKey)) {
     return TRANSLATION_CACHE.get(cacheKey) || text;
   }
-  
-  // Check manual fallback translations
-  if (MANUAL_TRANSLATIONS[text]) {
-    TRANSLATION_CACHE.set(cacheKey, MANUAL_TRANSLATIONS[text]);
-    return MANUAL_TRANSLATIONS[text];
+
+  if (targetLang === 'mg') {
+    const glossaryEntry = lookupGlossary(text);
+    if (glossaryEntry) {
+      TRANSLATION_CACHE.set(cacheKey, glossaryEntry.translated);
+      return glossaryEntry.translated;
+    }
+
+    // Check manual fallback translations
+    if (MANUAL_TRANSLATIONS[text]) {
+      TRANSLATION_CACHE.set(cacheKey, MANUAL_TRANSLATIONS[text]);
+      return MANUAL_TRANSLATIONS[text];
+    }
+  }
+
+  // Try dictionary scraping sources first for terms/short phrases.
+  try {
+    const dictionaryResponse = await fetch('/api/translate-dictionary', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        text,
+        source: 'en',
+        target: targetLang,
+      }),
+    });
+
+    if (dictionaryResponse.ok) {
+      const dictionaryData = await dictionaryResponse.json();
+      if (dictionaryData?.success && typeof dictionaryData.translated === 'string' && dictionaryData.translated.trim()) {
+        TRANSLATION_CACHE.set(cacheKey, dictionaryData.translated);
+        return dictionaryData.translated;
+      }
+    }
+  } catch (error) {
+    console.debug('Dictionary scraping lookup failed, falling back to the next provider:', error);
+  }
+
+  if (shouldPreserveEnglish(text)) {
+    return text;
+  }
+
+  if (targetLang === 'tdx') {
+    return text;
   }
   
   // Try LibreTranslate API (free, no auth needed)
@@ -123,7 +174,7 @@ export async function translateText(text: string, targetLang: 'en' | 'mg' = 'mg'
       body: JSON.stringify({
         q: text,
         source: 'en',
-        target: 'mg',
+        target: targetLang,
       }),
     });
     
@@ -144,7 +195,7 @@ export async function translateText(text: string, targetLang: 'en' | 'mg' = 'mg'
 /**
  * Batch translate multiple strings
  */
-export async function translateBatch(texts: string[], targetLang: 'en' | 'mg' = 'mg'): Promise<Record<string, string>> {
+export async function translateBatch(texts: string[], targetLang: 'en' | 'mg' | 'tdx' = 'mg'): Promise<Record<string, string>> {
   const results: Record<string, string> = {};
   
   for (const text of texts) {

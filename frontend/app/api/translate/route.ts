@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
+import { translateWithMyMemory } from "@/lib/translate-mymemory";
 
 interface Term {
   fr: string;
@@ -55,18 +56,27 @@ ${text}`,
   return content.text.trim();
 }
 
+async function translateWithFallback(
+  text: string,
+  terms?: Term[]
+): Promise<{ translated: string; providerUsed: string }> {
+  const hasAnthropicKey = Boolean(process.env.ANTHROPIC_API_KEY);
+
+  if (hasAnthropicKey) {
+    try {
+      const translated = await translateWithClaude(text, terms);
+      return { translated, providerUsed: 'anthropic' };
+    } catch (error) {
+      console.warn('Claude translation failed, falling back to MyMemory:', error);
+    }
+  }
+
+  const translated = await translateWithMyMemory(text, { terms, timeout: 30000 });
+  return { translated, providerUsed: hasAnthropicKey ? 'mymemory-fallback' : 'mymemory' };
+}
+
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    if (!process.env.ANTHROPIC_API_KEY) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "ANTHROPIC_API_KEY environment variable not set",
-        },
-        { status: 500 }
-      );
-    }
-
     const body: unknown = await request.json();
 
     if (!body || typeof body !== "object") {
@@ -151,12 +161,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       }
     }
 
-    const translated = await translateWithClaude(text, terms);
+    const { translated, providerUsed } = await translateWithFallback(text, terms);
 
     return NextResponse.json(
       {
         success: true,
         translated,
+        providerUsed,
       },
       { status: 200 }
     );
@@ -178,15 +189,38 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         {
           success: false,
           error: `Claude API error: ${error.message}`,
+          providerUsed: 'anthropic',
         },
         { status: error.status || 500 }
       );
+    }
+
+    try {
+      const body = await request.clone().json();
+      if (body && typeof body === 'object' && typeof (body as TranslateRequest).text === 'string') {
+        const fallbackTranslated = await translateWithMyMemory((body as TranslateRequest).text, {
+          terms: (body as TranslateRequest).terms,
+          timeout: 30000,
+        });
+
+        return NextResponse.json(
+          {
+            success: true,
+            translated: fallbackTranslated,
+            providerUsed: 'mymemory-fallback',
+          },
+          { status: 200 }
+        );
+      }
+    } catch {
+      // Ignore and return the generic error below.
     }
 
     return NextResponse.json(
       {
         success: false,
         error: "Internal server error during translation",
+        providerUsed: 'fallback-unavailable',
       },
       { status: 500 }
     );

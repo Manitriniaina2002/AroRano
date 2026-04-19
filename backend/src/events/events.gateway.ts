@@ -144,4 +144,53 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     
     this.logger.debug(`Broadcasted device deleted event`);
   }
+
+  /**
+   * Broadcast ESP32 sensor reading to all connected clients subscribed to the device
+   */
+  broadcastESP32Reading(deviceId: string, reading: any): void {
+    if (!this.server) {
+      this.logger.debug(`WebSocket server not initialized, skipping ESP32Reading broadcast`);
+      return;
+    }
+    
+    const clients = this.deviceConnections.get(deviceId);
+    
+    if (clients && clients.size > 0) {
+      clients.forEach((clientId) => {
+        this.server.to(clientId).emit('esp32Reading', {
+          deviceId,
+          reading,
+          timestamp: new Date(),
+        });
+      });
+      
+      this.logger.debug(`Broadcasted ESP32 reading for device ${deviceId} to ${clients.size} clients`);
+    }
+    
+    // Also broadcast to all clients (not just device subscribers)
+    this.server.emit('esp32ReadingGlobal', {
+      deviceId,
+      reading,
+      timestamp: new Date(),
+    });
+  }
+
+  /**
+   * Broadcast alert from ESP32 device
+   */
+  broadcastAlert(deviceId: string, alert: string): void {
+    if (!this.server) {
+      this.logger.debug(`WebSocket server not initialized, skipping alert broadcast`);
+      return;
+    }
+    
+    this.server.emit('deviceAlert', {
+      deviceId,
+      alert,
+      timestamp: new Date(),
+    });
+    
+    this.logger.warn(`Broadcasted alert for device ${deviceId}: ${alert}`);
+  }
 }

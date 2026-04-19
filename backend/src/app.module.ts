@@ -4,9 +4,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DevicesModule } from './devices/devices.module';
+import { ESP32Module } from './devices/esp32.module';
 import { EventsModule } from './events/events.module';
 import { Device } from './devices/device.entity';
 import { SensorReading } from './devices/sensor-reading.entity';
+import { ESP32Reading } from './devices/esp32-reading.entity';
 
 @Module({
   imports: [
@@ -20,12 +22,13 @@ import { SensorReading } from './devices/sensor-reading.entity';
       username: process.env.DB_USERNAME || 'postgres',
       password: process.env.DB_PASSWORD || 'postgres',
       database: process.env.DB_NAME || 'arorano_iot',
-      entities: [Device, SensorReading],
+      entities: [Device, SensorReading, ESP32Reading],
       synchronize: true, // Auto-sync schema in development
       logging: process.env.NODE_ENV === 'development',
     }),
     EventsModule,
     DevicesModule,
+    ESP32Module,
   ],
   controllers: [AppController],
   providers: [AppService],

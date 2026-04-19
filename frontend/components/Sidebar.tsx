@@ -3,6 +3,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/router';
 import { FiHome, FiActivity, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { t } from '@/lib/i18n';
+import { useLanguage } from '@/lib/LanguageContext';
 
 interface SidebarProps {
   isOpen?: boolean;
@@ -12,6 +14,7 @@ interface SidebarProps {
 export function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(!isOpen);
+  const { language } = useLanguage();
 
   const handleToggle = () => {
     const newState = !collapsed;
@@ -23,12 +26,12 @@ export function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
 
   const navItems = [
     {
-      label: 'Home',
+      key: 'home',
       icon: FiHome,
       href: '/',
     },
     {
-      label: 'Dashboard',
+      key: 'dashboard',
       icon: FiActivity,
       href: '/dashboard',
     },
@@ -45,7 +48,7 @@ export function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
         <div className="flex justify-center flex-1">
           <Image
             src="/images/logo.PNG"
-            alt="AroRano Logo"
+            alt={t('common.logoAlt', language as 'en' | 'mg')}
             width={collapsed ? 36 : 72}
             height={collapsed ? 36 : 72}
             className={`object-contain ${collapsed ? 'w-9 h-9' : 'w-20 h-20'}`}
@@ -55,7 +58,7 @@ export function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
         <button
           onClick={handleToggle}
           className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex-shrink-0 text-gray-600"
-          aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          aria-label={collapsed ? t('common.expandSidebar', language as 'en' | 'mg') : t('common.collapseSidebar', language as 'en' | 'mg')}
         >
           {collapsed ? <FiChevronRight size={20} /> : <FiChevronLeft size={20} />}
         </button>
@@ -66,7 +69,7 @@ export function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
         {navItems.map((item) => {
           const Icon = item.icon;
           const active = isActive(item.href);
-          const label = item.label;
+          const label = t(`nav.${item.key}`, language as 'en' | 'mg');
           return (
             <Link key={item.href} href={item.href}>
               <div
