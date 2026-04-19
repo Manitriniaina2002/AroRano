@@ -1,0 +1,319 @@
+{
+  "common": {
+    "appName": "AroRano",
+    "tagline": "Fikolokolo ny Rano Malandra",
+    "loading": "Miandry...",
+    "error": "Nisy hadisoana",
+    "retry": "Andramo indray",
+    "save": "Tehirizo",
+    "cancel": "Ajanony",
+    "delete": "Fafao",
+    "edit": "Havaozina",
+    "add": "Hanampy",
+    "close": "Akatona",
+    "confirm": "Hanamarinana",
+    "back": "Hiverina",
+    "next": "Manaraka",
+    "submit": "Alefa",
+    "search": "Tadiavo",
+    "filter": "Sisao",
+    "export": "Alaina",
+    "refresh": "Havaozy",
+    "settings": "Fikirana",
+    "logout": "Hivoaka",
+    "login": "Hiditra",
+    "yes": "Eny",
+    "no": "Tsia",
+    "unknown": "Tsy fantatra",
+    "noData": "Tsy misy angona"
+  },
+
+  "nav": {
+    "home": "Fandraisana",
+    "dashboard": "Tableau de bord",
+    "devices": "Fitaovana",
+    "readings": "Vakiteny",
+    "alerts": "Fampitandremana",
+    "reports": "Tatitra",
+    "settings": "Fikirana",
+    "help": "Fanampiana"
+  },
+
+  "home": {
+    "welcome": "Tongasoa ao amin'ny AroRano",
+    "subtitle": "Rafitra IoT manaraka ny fiasan'ny tokon-drano",
+    "description": "Andraso sy fitantanana ny fitaovana IoT sy angona sensor amin'ny fotoana mety",
+    "getStarted": "Atomboy",
+    "viewDashboard": "Hijery ny Dashboard",
+    "features": {
+      "title": "Ny mombamomba ny AroRano",
+      "monitoring": {
+        "title": "Fanaraha-maso amin'ny fotoana mety",
+        "description": "Araho ny angona sensor amin'ny fotoana mety miaraka amin'ny WebSocket"
+      },
+      "devices": {
+        "title": "Fitantanana fitaovana",
+        "description": "Amboary, havaozina ary fenoy ny fitaovana IoT rehetra"
+      },
+      "alerts": {
+        "title": "Fampitandremana avy hatrany",
+        "description": "Azoy avy hatrany raha misy olana amin'ny fitaovana na ny rano"
+      },
+      "analytics": {
+        "title": "Fanadihadiana angona",
+        "description": "Jereo ny tatitra sy ny sary an-tsary momba ny fiasan'ny tokon-drano"
+      }
+    }
+  },
+
+  "dashboard": {
+    "title": "Tableau de bord",
+    "subtitle": "Fanaraha-maso ny tokon-drano",
+    "overview": "Fijery ankapobe",
+    "liveData": "Angona velona",
+    "lastUpdated": "Nohavaozina farany",
+    "realtime": "Amin'ny fotoana mety",
+
+    "stats": {
+      "totalDevices": "Isa fitaovana",
+      "activeDevices": "Fitaovana miasa",
+      "inactiveDevices": "Fitaovana tsy miasa",
+      "errorDevices": "Fitaovana misy olana",
+      "totalReadings": "Isa vakiteny",
+      "todayReadings": "Vakiteny androany",
+      "waterLevel": "Haavon'ny rano",
+      "temperature": "Hafanana",
+      "humidity": "Hamotan'ny rivotra",
+      "pressure": "Tsindry"
+    },
+
+    "waterTank": {
+      "title": "Fiasana ny tokon-drano",
+      "level": "Ambaratonga",
+      "capacity": "Faharetana",
+      "status": "Toetry ny rano",
+      "full": "Feno",
+      "empty": "Foana",
+      "normal": "Mahazatra",
+      "low": "Ambany",
+      "critical": "Manahirana",
+      "overflow": "Mihoatra"
+    },
+
+    "sensors": {
+      "title": "Sensor",
+      "rain": "Sensor orana",
+      "ultrasonic": "Sensor ultrason",
+      "temperature": "Sensor hafanana (DHT22)",
+      "humidity": "Sensor hamotan'ny rivotra",
+      "waterPump": "Pompy rano",
+      "lastReading": "Vakiteny farany",
+      "unit": "Vontoatiny"
+    },
+
+    "controls": {
+      "title": "Fifehezan'ny fitaovana",
+      "pumpOn": "Atomboy ny pompy",
+      "pumpOff": "Ajanony ny pompy",
+      "buzzerOn": "Atomboy ny buzzer",
+      "buzzerOff": "Ajanony ny buzzer",
+      "ledRed": "LED Mena",
+      "ledGreen": "LED Maitso",
+      "ledYellow": "LED Mavo",
+      "relay": "Relais"
+    },
+
+    "chart": {
+      "title": "Sary an-tsary ny angona",
+      "timeRange": "Elanelana fotoana",
+      "last1h": "Adiny 1 lasa",
+      "last6h": "Adiny 6 lasa",
+      "last24h": "Adiny 24 lasa",
+      "last7d": "Andro 7 lasa",
+      "last30d": "Andro 30 lasa",
+      "value": "Sanda",
+      "time": "Fotoana",
+      "min": "Ambany indrindra",
+      "max": "Ambony indrindra",
+      "avg": "Antonony",
+      "noData": "Tsy misy angona haseho"
+    }
+  },
+
+  "devices": {
+    "title": "Fitaovana IoT",
+    "subtitle": "Fitantanana fitaovana rehetra",
+    "addDevice": "Hanampy fitaovana",
+    "editDevice": "Havaozina ny fitaovana",
+    "deleteDevice": "Hamafa ny fitaovana",
+    "deleteConfirm": "Tena hamafa io fitaovana io ve ianao? Tsy azo averina izany.",
+    "noDevices": "Tsy misy fitaovana mbola napetraka",
+    "searchDevices": "Tadiavo fitaovana...",
+
+    "fields": {
+      "name": "Anaran'ny fitaovana",
+      "type": "Karazana fitaovana",
+      "location": "Toerana",
+      "status": "Toetry",
+      "metadata": "Fampahalalana fanampiny",
+      "createdAt": "Naorina tamin'ny",
+      "updatedAt": "Nohavaozina tamin'ny",
+      "id": "ID"
+    },
+
+    "types": {
+      "temperature": "Hafanana",
+      "humidity": "Hamotan'ny rivotra",
+      "motion": "Hetsika",
+      "pressure": "Tsindry",
+      "water_level": "Ambaratonga rano",
+      "rain": "Orana",
+      "ultrasonic": "Ultrason",
+      "relay": "Relais",
+      "pump": "Pompy"
+    },
+
+    "status": {
+      "active": "Miasa",
+      "inactive": "Tsy miasa",
+      "error": "Misy olana",
+      "offline": "Tsy mifandray",
+      "online": "Mifandray"
+    },
+
+    "form": {
+      "namePlaceholder": "Ohatra: Sensor tokon-drano",
+      "typePlaceholder": "Safidio ny karazana",
+      "locationPlaceholder": "Ohatra: Tokon-drano ambony",
+      "metadataPlaceholder": "JSON fanampiny (tsy voatery)"
+    },
+
+    "actions": {
+      "viewReadings": "Hijery ny vakiteny",
+      "addReading": "Hanampy vakiteny",
+      "viewStats": "Hijery ny statistika"
+    }
+  },
+
+  "readings": {
+    "title": "Vakiteny sensor",
+    "subtitle": "Angona avy amin'ny fitaovana",
+    "addReading": "Hanampy vakiteny",
+    "noReadings": "Tsy misy vakiteny mbola napetraka",
+    "latestReading": "Vakiteny farany",
+
+    "fields": {
+      "value": "Sanda",
+      "unit": "Vontoatiny",
+      "timestamp": "Fotoana",
+      "deviceId": "ID fitaovana"
+    },
+
+    "units": {
+      "celsius": "°C (Celsius)",
+      "fahrenheit": "°F (Fahrenheit)",
+      "percent": "% (Isan-jato)",
+      "meters": "m (Metatra)",
+      "centimeters": "cm (Santimetatra)",
+      "liters": "L (Litatra)",
+      "rpm": "RPM",
+      "pascal": "Pa (Pascal)",
+      "bar": "bar",
+      "boolean": "0/1 (Eny/Tsia)"
+    },
+
+    "stats": {
+      "title": "Statistika",
+      "min": "Sanda ambany indrindra",
+      "max": "Sanda ambony indrindra",
+      "avg": "Antonony",
+      "count": "Isa vakiteny",
+      "period": "Elanelana"
+    }
+  },
+
+  "alerts": {
+    "title": "Fampitandremana",
+    "subtitle": "Fampitandremana sy laza momba ny fitaovana",
+    "noAlerts": "Tsy misy fampitandremana ankehitriny",
+    "clearAll": "Vonoy rehetra",
+    "markAsRead": "Marihina ho vakiana",
+
+    "types": {
+      "waterLow": "Rano vitsy loatra",
+      "waterCritical": "Rano manahirana",
+      "waterOverflow": "Rano mihoatra",
+      "deviceOffline": "Fitaovana tsy mifandray",
+      "deviceError": "Olana amin'ny fitaovana",
+      "sensorError": "Olana amin'ny sensor",
+      "pumpFailed": "Pompy tsy miasa",
+      "rainDetected": "Orana hita"
+    },
+
+    "severity": {
+      "info": "Fampahalalana",
+      "warning": "Fampitandremana",
+      "critical": "Manahirana",
+      "emergency": "Maika"
+    }
+  },
+
+  "esp32": {
+    "title": "Fifehezan'ny ESP32",
+    "connected": "Mifandray",
+    "disconnected": "Tsy mifandray",
+    "lastSeen": "Hitan'ny farany",
+    "firmware": "Firmware",
+    "ipAddress": "Adiresy IP",
+    "macAddress": "Adiresy MAC",
+    "signalStrength": "Herin'ny signal (WiFi)",
+    "restart": "Atombohy indray",
+    "update": "Havaozina ny firmware"
+  },
+
+  "websocket": {
+    "connecting": "Miandry fifandraisana...",
+    "connected": "Mifandray amin'ny server",
+    "disconnected": "Tapaka ny fifandraisana",
+    "reconnecting": "Miezaka hifandray indray...",
+    "error": "Olana amin'ny fifandraisana"
+  },
+
+  "errors": {
+    "networkError": "Olana amin'ny tambajotra. Jereo ny fifandraisana.",
+    "serverError": "Olana amin'ny server. Andramo indray.",
+    "notFound": "Tsy hita ny zavatra tadiavina.",
+    "unauthorized": "Tsy manana fahazoan-dalana.",
+    "forbidden": "Voararan'ny fidirana.",
+    "deviceNotFound": "Tsy hita ny fitaovana.",
+    "readingFailed": "Tsy vitaina ny mamaky ny angona.",
+    "saveFailed": "Tsy vitaina ny mitahiry.",
+    "deleteFailed": "Tsy vitaina ny mamafa.",
+    "connectionFailed": "Tsy vitaina ny mifandray amin'ny server."
+  },
+
+  "success": {
+    "deviceCreated": "Voaforona ny fitaovana.",
+    "deviceUpdated": "Voaova ny fitaovana.",
+    "deviceDeleted": "Voafafa ny fitaovana.",
+    "readingAdded": "Voaampiana ny vakiteny.",
+    "settingsSaved": "Voatahiry ny fikirana."
+  },
+
+  "footer": {
+    "copyright": "© 2025 AroRano — Ny rano dia harena sarobidy",
+    "madeIn": "Nataon'ny Malagasy ho an'i Madagasikara",
+    "version": "Dikan-teny"
+  },
+
+  "lcd": {
+    "waterLevel": "Ambaratonga rano",
+    "pump": "Pompy",
+    "on": "MIASA",
+    "off": "TSY MIASA",
+    "rain": "ORANA",
+    "noRain": "TSY ORANA",
+    "temp": "Temp",
+    "hum": "Hamotan"
+  }
+}

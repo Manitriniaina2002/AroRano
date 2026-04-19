@@ -9,6 +9,8 @@ import { Layout } from '@/components/Layout';
 import { WaveAnimation } from '@/components/WaveAnimation';
 import { FiArrowRight, FiCheckCircle, FiAlertCircle, FiLoader, FiDroplet, FiActivity, FiTrendingUp } from 'react-icons/fi';
 
+export const dynamic = 'force-dynamic';
+
 export default function Home() {
   const [health, setHealth] = useState<HealthResponse | null>(null);
   const [message, setMessage] = useState<WelcomeResponse | null>(null);
@@ -67,8 +69,8 @@ export default function Home() {
       <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Introduction */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-3">Smart Water Monitoring</h1>
-          <p className="text-lg text-gray-600">Real-time reservoir monitoring with intelligent sensors and analytics</p>
+          <h1 className="text-4xl font-bold text-gray-900 mb-3">{t('home.smartWaterMonitoring')}</h1>
+          <p className="text-lg text-gray-600">{t('home.realtimeMonitoringDesc')}</p>
         </div>
 
         {/* Key Features - Simplified */}
@@ -77,24 +79,24 @@ export default function Home() {
             <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center mb-3">
               <FiDroplet size={20} className="text-blue-600" />
             </div>
-            <h3 className="font-semibold text-gray-900 mb-1">Real-time Monitoring</h3>
-            <p className="text-sm text-gray-600">Instant water level tracking and sensor data</p>
+            <h3 className="font-semibold text-gray-900 mb-1">{t('home.realtimeMonitoring')}</h3>
+            <p className="text-sm text-gray-600">{t('home.realtimeMonitoringDetail')}</p>
           </div>
 
           <div className="bg-white rounded-lg border border-cyan-100 p-6">
             <div className="w-10 h-10 bg-cyan-50 rounded-lg flex items-center justify-center mb-3">
               <FiActivity size={20} className="text-cyan-600" />
             </div>
-            <h3 className="font-semibold text-gray-900 mb-1">Multi-Sensor Support</h3>
-            <p className="text-sm text-gray-600">Temperature, pH, turbidity & flow monitoring</p>
+            <h3 className="font-semibold text-gray-900 mb-1">{t('home.multiSensorSupport')}</h3>
+            <p className="text-sm text-gray-600">{t('home.multiSensorDetail')}</p>
           </div>
 
           <div className="bg-white rounded-lg border border-teal-100 p-6">
             <div className="w-10 h-10 bg-teal-50 rounded-lg flex items-center justify-center mb-3">
               <FiTrendingUp size={20} className="text-teal-600" />
             </div>
-            <h3 className="font-semibold text-gray-900 mb-1">Smart Alerts</h3>
-            <p className="text-sm text-gray-600">Instant notifications for critical events</p>
+            <h3 className="font-semibold text-gray-900 mb-1">{t('home.smartAlerts')}</h3>
+            <p className="text-sm text-gray-600">{t('home.smartAlertsDetail')}</p>
           </div>
         </div>
 

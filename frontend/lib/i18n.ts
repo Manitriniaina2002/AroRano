@@ -41,15 +41,6 @@ export const translations: Record<Language, any> = {
       minimum: 'Minimum',
       maximum: 'Maximum',
     },
-    home: {
-      title: 'AroRano',
-      subtitle: 'IoT Device Management & Monitoring Platform',
-      welcome: 'Welcome Message',
-      serverStatus: 'Server Status',
-      dashboard: 'IoT Monitoring Dashboard',
-      dashboardDescription: 'Manage and monitor your connected IoT devices, view sensor readings, and track device statistics.',
-      goToDashboard: 'Go to Dashboard',
-    },
     dashboard: {
       title: 'IoT Device Monitoring Dashboard',
       devices: 'Devices',
@@ -76,13 +67,57 @@ export const translations: Record<Language, any> = {
       websocketStatus: 'WebSocket Status',
       websocketConnected: 'WebSocket Connected',
       websocketDisconnected: 'WebSocket Disconnected',
+      reservoirRepresentation: 'Reservoir Representation',
+      reservoirOptimal: 'Optimal',
+      reservoirNormal: 'Normal',
+      reservoirLow: 'Low',
+      currentWaterLevel: 'Current Water Level',
+      waterSystemSetup: 'Water System Setup',
+      setupDescription: 'Physical assembly connected to this monitoring solution',
     },
     deviceTypes: {
+      // Sensors
+      waterLevel: 'Water Level Sensor',
+      rainSensor: 'Rain Sensor',
+      ultrasonic: 'Ultrasonic Sensor',
+      dht22: 'DHT22 Sensor',
       temperature: 'Temperature Sensor',
       humidity: 'Humidity Sensor',
+      // Actuators
+      waterPump: 'Water Pump',
+      relay: 'Relay Control',
+      // Indicators
+      buzzer: 'Alarm Buzzer',
+      ledRGB: 'RGB LED',
+      lcdScreen: 'LCD Display',
+      // Control
+      pushButton: 'Push Button',
+      // Microcontroller
+      esp32: 'ESP32 Microcontroller',
+      // Legacy
+      turbidity: 'Turbidity Sensor',
+      ph: 'pH Sensor',
+      flowRate: 'Flow Rate Sensor',
       motion: 'Motion Detector',
       pressure: 'Pressure Sensor',
       light: 'Light Sensor',
+    },
+    home: {
+      title: 'AroRano',
+      subtitle: 'IoT Device Management & Monitoring Platform',
+      welcome: 'Welcome Message',
+      serverStatus: 'Server Status',
+      dashboard: 'IoT Monitoring Dashboard',
+      dashboardDescription: 'Manage and monitor your connected IoT devices, view sensor readings, and track device statistics.',
+      goToDashboard: 'Go to Dashboard',
+      smartWaterMonitoring: 'Smart Water Monitoring',
+      realtimeMonitoringDesc: 'Real-time reservoir monitoring with intelligent sensors and analytics',
+      realtimeMonitoring: 'Real-time Monitoring',
+      realtimeMonitoringDetail: 'Instant water level tracking and sensor data',
+      multiSensorSupport: 'Multi-Sensor Support',
+      multiSensorDetail: 'Temperature, pH, turbidity & flow monitoring',
+      smartAlerts: 'Smart Alerts',
+      smartAlertsDetail: 'Instant notifications for critical events',
     },
   },
   mg: {
@@ -112,45 +147,80 @@ export const translations: Record<Language, any> = {
     },
     home: {
       title: 'AroRano',
-      subtitle: 'Plataporma fampitantanana sy famantarana ny amboafaritra IoT',
+      subtitle: 'Platform Fampitantanana sy Famantarana IoT',
       welcome: 'Tongasoa! Welakoa eto.',
-      serverStatus: 'Toe-javatra ny serbisy',
-      dashboard: 'Faritra fahita ny amboafaritra',
-      dashboardDescription: 'Mitantana sy miandra-miandra ny amboafaritra IoT, hijery ny sanda avy amin\'ny fitoeram-pahalalana, ary jerena ny lalao statistika.',
-      goToDashboard: 'Andeha amin\'ny faritra fahita',
+      serverStatus: 'Toe-javatra Server',
+      dashboard: 'Dashboard Famantarana Amboafaritra',
+      dashboardDescription: 'Mitantana sy miandra-miandra ny amboafaritra IoT, hijery ny sanda avy amin\'ny Sensor, ary jerena ny Statistika.',
+      goToDashboard: 'Andeha amin\'ny Dashboard',
+      smartWaterMonitoring: 'Smart Water Monitoring',
+      realtimeMonitoringDesc: 'Real-time Monitoring amin\'ny Fato-dranomaìnty miaraka amin\'ny Sensor Fahdalana',
+      realtimeMonitoring: 'Real-time Monitoring',
+      realtimeMonitoringDetail: 'Famantarana haavon\'ny rano sy sanda avy amin\'ny Sensor',
+      multiSensorSupport: 'Fanampian\'ny Sensor Maro',
+      multiSensorDetail: 'Famantarana hafanana, pH, turbidity & flow rate amin\'ny rano',
+      smartAlerts: 'Smart Alerts',
+      smartAlertsDetail: 'Famantarana avy hatrany ho an\'ny zava-mitranga manan-danja',
     },
     dashboard: {
-      title: 'Faritra fahita ny amboafaritra',
+      title: 'Dashboard Famantarana Amboafaritra',
       devices: 'Amboafaritra',
       deviceCount: 'Amboafaritra ({count})',
-      noDevices: 'Tsy misy amboafaritra',
-      addDevice: 'Hasisa amboafaritra vaovao',
+      noDevices: 'Tsy misy amboafaritra po',
+      addDevice: 'Hasisa Amboafaritra Vaovao',
       cancelAdd: 'Fatsoy',
-      deviceName: 'Anarana ny amboafaritra',
-      selectType: 'Fidio ny karazana ny amboafaritra',
+      deviceName: 'Anarana Amboafaritra',
+      selectType: 'Fidio Karazana Amboafaritra',
       location: 'Toerana',
-      createDevice: 'Hamorona amboafaritra',
-      deleteDevice: 'Hofafao ny amboafaritra',
+      createDevice: 'Hamorona Amboafaritra',
+      deleteDevice: 'Hofafao Amboafaritra',
       confirmDelete: 'Antoka ve ianao fa hofafao io amboafaritra io?',
       selectDevice: 'Fidio amboafaritra iray raha hijery ny antsipiriany',
-      statistics: 'Lalao statistika',
-      liveReadings: 'Vakitry fijelazana',
+      statistics: 'Statistika',
+      liveReadings: 'Vakitry Tena-potoana',
       noReadings: 'Tsy misy vakitry',
       temperature: 'Hafanana',
       humidity: 'Potpon\'afovoan',
       motion: 'Fihetsika',
       pressure: 'Entona',
       light: 'Solafaka',
-      websocketStatus: 'Toe-javatra ny fifandraisan\'ny alahady',
-      websocketConnected: 'Mifandray tsara',
-      websocketDisconnected: 'Tsy mifandray',
+      websocketStatus: 'Toe-javatra WebSocket',
+      websocketConnected: 'WebSocket Mifandray',
+      websocketDisconnected: 'WebSocket Tsy Mifandray',
+      reservoirRepresentation: 'Fandrefesana Fato-dranomaìnty',
+      reservoirOptimal: 'Tsara Loatra',
+      reservoirNormal: 'Mahazatra',
+      reservoirLow: 'Kely Loatra',
+      currentWaterLevel: 'Haavon\'ny Rano Ankehitriny',
+      waterSystemSetup: 'Afinoan\'ny Rafitra Rano',
+      setupDescription: 'Fametafetana ara-batana mifandray amin\'ity famantarana ity',
     },
     deviceTypes: {
-      temperature: 'Fandrefesana hafanana',
-      humidity: 'Fandrefesana potpon\'afovoan',
-      motion: 'Mpamantatra fihetsika',
-      pressure: 'Fandrefesana entona',
-      light: 'Fandrefesana solafaka',
+      // Sensors
+      waterLevel: 'Water Level Sensor',
+      rainSensor: 'Rain Sensor',
+      ultrasonic: 'Ultrasonic Sensor',
+      dht22: 'DHT22 Sensor',
+      temperature: 'Temperature Sensor',
+      humidity: 'Humidity Sensor',
+      // Actuators
+      waterPump: 'Water Pump',
+      relay: 'Relay Control',
+      // Indicators
+      buzzer: 'Alarm Buzzer',
+      ledRGB: 'RGB LED',
+      lcdScreen: 'LCD Display',
+      // Control
+      pushButton: 'Push Button',
+      // Microcontroller
+      esp32: 'ESP32 Microcontroller',
+      // Legacy
+      turbidity: 'Turbidity Sensor',
+      ph: 'pH Sensor',
+      flowRate: 'Flow Rate Sensor',
+      motion: 'Motion Detector',
+      pressure: 'Pressure Sensor',
+      light: 'Light Sensor',
     },
   },
   tdx: {
@@ -182,51 +252,89 @@ export const translations: Record<Language, any> = {
     },
     home: {
       title: 'AroRano',
-      subtitle: 'Plataporma fampitantanana sy famantarana ny amboafaritra IoT',
+      subtitle: 'Platform Fampitantanana sy Famantarana IoT',
       welcome: 'Tongasoa! Velakoa eto.',
-      serverStatus: 'Toe-javatra ny serbisy',
-      dashboard: 'Faritra fahita ny amboafaritra',
-      dashboardDescription: 'Mitantana sy miandra-miandra ny amboafaritra IoT, hijery ny sanda avy amin\'ny fitoeram-pahalalana, ary jerena ny lalao statistika.',
-      goToDashboard: 'Andeha amin\'ny faritra fahita',
+      serverStatus: 'Toe-javatra Server',
+      dashboard: 'Dashboard Famantarana Amboafaritra',
+      dashboardDescription: 'Mitantana sy miandra-miandra ny amboafaritra IoT, hijery ny sanda avy amin\'ny Sensor, ary jerena ny Statistika.',
+      goToDashboard: 'Andeha amin\'ny Dashboard',
+      smartWaterMonitoring: 'Smart Water Monitoring',
+      realtimeMonitoringDesc: 'Real-time Monitoring amin\'ny Fato-dranomaìnty miaraka amin\'ny Sensor Fahdalana',
+      realtimeMonitoring: 'Real-time Monitoring',
+      realtimeMonitoringDetail: 'Famantarana haavon\'ny rano sy sanda avy amin\'ny Sensor',
+      multiSensorSupport: 'Fanampian\'ny Sensor Maro',
+      multiSensorDetail: 'Famantarana hafanana, pH, turbidity & flow rate amin\'ny rano',
+      smartAlerts: 'Smart Alerts',
+      smartAlertsDetail: 'Famantarana avy hatrany ho an\'ny zava-mitranga manan-danja',
     },
     dashboard: {
-      title: 'Faritra fahita ny amboafaritra',
+      title: 'Dashboard Famantarana Amboafaritra',
       devices: 'Amboafaritra',
       deviceCount: 'Amboafaritra ({count})',
-      noDevices: 'Tsy misy amboafaritra',
-      addDevice: 'Hampitsy amboafaritra vaovao',
+      noDevices: 'Tsy misy amboafaritra po',
+      addDevice: 'Hampitsy Amboafaritra Vaovao',
       cancelAdd: 'Fatsoy',
-      deviceName: 'Anarana ny amboafaritra',
-      selectType: 'Fidio ny karazany ny amboafaritra',
+      deviceName: 'Anarana Amboafaritra',
+      selectType: 'Fidio Karazany Amboafaritra',
       location: 'Toerana',
-      createDevice: 'Hamorona amboafaritra',
-      deleteDevice: 'Hofoina ny amboafaritra',
+      createDevice: 'Hamorona Amboafaritra',
+      deleteDevice: 'Hofoina Amboafaritra',
       confirmDelete: 'Azo antoka ve hoe hofoina io amboafaritra io?',
       selectDevice: 'Fidio amboafaritra iray raha hijery ny antsipiriany',
-      statistics: 'Lalao statistika',
-      liveReadings: 'Vakitry fijelazana',
+      statistics: 'Statistika',
+      liveReadings: 'Vakitry Tena-potoana',
       noReadings: 'Tsy misy vakitry',
       temperature: 'Hafanana',
       humidity: 'Potpon\'afovoan',
       motion: 'Fihetsika',
       pressure: 'Entona',
       light: 'Solafaka',
-      websocketStatus: 'Toe-javatra ny fifandraisan\'ny alahady',
-      websocketConnected: 'Mifandray tsara',
-      websocketDisconnected: 'Tsy mifandray',
+      websocketStatus: 'Toe-javatra WebSocket',
+      websocketConnected: 'WebSocket Mifandray',
+      websocketDisconnected: 'WebSocket Tsy Mifandray',
+      reservoirRepresentation: 'Fandrefesana Fato-dranomaìnty',
+      reservoirOptimal: 'Tsara Loatra',
+      reservoirNormal: 'Mahazatra',
+      reservoirLow: 'Kely Loatra',
+      currentWaterLevel: 'Haavon\'ny Rano Ankehitriny',
+      waterSystemSetup: 'Afinoan\'ny Rafitra Rano',
+      setupDescription: 'Fametafetana ara-batana mifandray amin\'ity famantarana ity',
     },
     deviceTypes: {
-      temperature: 'Fandrefesana hafanana',
-      humidity: 'Fandrefesana potpon\'afovoan',
-      motion: 'Mpamantatra fihetsika',
-      pressure: 'Fandrefesana entona',
-      light: 'Fandrefesana solafaka',
+      // Sensors
+      waterLevel: 'Water Level Sensor',
+      rainSensor: 'Rain Sensor',
+      ultrasonic: 'Ultrasonic Sensor',
+      dht22: 'DHT22 Sensor',
+      temperature: 'Temperature Sensor',
+      humidity: 'Humidity Sensor',
+      // Actuators
+      waterPump: 'Water Pump',
+      relay: 'Relay Control',
+      // Indicators
+      buzzer: 'Alarm Buzzer',
+      ledRGB: 'RGB LED',
+      lcdScreen: 'LCD Display',
+      // Control
+      pushButton: 'Push Button',
+      // Microcontroller
+      esp32: 'ESP32 Microcontroller',
+      // Legacy
+      turbidity: 'Turbidity Sensor',
+      ph: 'pH Sensor',
+      flowRate: 'Flow Rate Sensor',
+      motion: 'Motion Detector',
+      pressure: 'Pressure Sensor',
+      light: 'Light Sensor',
     },
   },
 };
 
 let currentLanguage: Language = 'en';
 
+/**
+ * Set the current language (legacy - use LanguageContext instead)
+ */
 export function setLanguage(lang: Language) {
   currentLanguage = lang;
   if (typeof window !== 'undefined') {
@@ -235,6 +343,9 @@ export function setLanguage(lang: Language) {
   }
 }
 
+/**
+ * Get the current language (legacy - use useLanguage hook instead)
+ */
 export function getLanguage(): Language {
   if (typeof window !== 'undefined') {
     const stored = localStorage.getItem('language') as Language;
@@ -242,6 +353,25 @@ export function getLanguage(): Language {
       return stored;
     }
   }
+  return 'en';
+}
+
+/**
+ * Get user language preference with auto-detection support
+ */
+export function getUserLanguagePreference(): Language {
+  if (typeof window === 'undefined') return 'en';
+  
+  // Check localStorage first
+  const saved = localStorage.getItem('language');
+  if (saved && (saved === 'en' || saved === 'mg' || saved === 'tdx')) {
+    return saved as Language;
+  }
+  
+  // Auto-detect from browser language
+  const browserLang = navigator.language?.split('-')[0].toLowerCase() || 'en';
+  if (browserLang === 'mg') return 'mg';
+  
   return 'en';
 }
 
@@ -438,4 +568,40 @@ if (typeof window !== 'undefined') {
   } catch (e) {
     console.warn('Failed to load translation suggestions:', e);
   }
+}
+
+/**
+ * AI-enhanced translation helper - integrates with ai-translate.ts
+ * Provides static translations first, then AI translation for dynamic content
+ */
+export async function tAI(key: string, lang?: Language): Promise<string> {
+  // First try static translations
+  const staticTranslation = t(key, lang);
+  if (staticTranslation !== key) {
+    return staticTranslation;
+  }
+  
+  // If key not found, try AI translation (dynamic content)
+  try {
+    const { translateText } = await import('./ai-translate');
+    const targetLang: 'en' | 'mg' = (lang === 'tdx' ? 'mg' : lang) || (currentLanguage === 'tdx' ? 'mg' : currentLanguage) as 'en' | 'mg';
+    return await translateText(key, targetLang);
+  } catch (error) {
+    console.warn(`Failed to translate "${key}" with AI:`, error);
+    return key;
+  }
+}
+
+/**
+ * Batch translate keys using AI
+ * Useful for translating multiple UI strings at once
+ */
+export async function tBatch(keys: string[], lang?: Language): Promise<Record<string, string>> {
+  const results: Record<string, string> = {};
+  
+  for (const key of keys) {
+    results[key] = await tAI(key, lang);
+  }
+  
+  return results;
 }

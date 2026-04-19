@@ -15,6 +15,8 @@ import {
   FiWifiOff,
 } from 'react-icons/fi';
 
+export const dynamic = 'force-dynamic';
+
 export default function DevicesDashboard() {
   const [_devices, setDevices] = useState<Device[]>([]);
   const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
@@ -126,15 +128,15 @@ export default function DevicesDashboard() {
   };
 
   const hardwareItems = [
-    { name: 'Capteur de pluie', detail: 'Détection des précipitations', icon: <FiCloud size={16} />, tone: 'bg-blue-50 text-blue-700 border-blue-100' },
-    { name: 'Buzzer', detail: 'Alerte sonore', icon: <FiAlertCircle size={16} />, tone: 'bg-red-50 text-red-700 border-red-100' },
-    { name: 'LED rouge / verte / jaune', detail: 'Signal visuel d’état', icon: <FiActivity size={16} />, tone: 'bg-amber-50 text-amber-700 border-amber-100' },
+    { name: 'rainSensor', detail: 'Détection des précipitations', icon: <FiCloud size={16} />, tone: 'bg-blue-50 text-blue-700 border-blue-100' },
+    { name: 'buzzer', detail: 'Alerte sonore', icon: <FiAlertCircle size={16} />, tone: 'bg-red-50 text-red-700 border-red-100' },
+    { name: 'ledRGB', detail: 'Signal visuel d’état', icon: <FiActivity size={16} />, tone: 'bg-amber-50 text-amber-700 border-amber-100' },
     { name: 'Pompe à eau', detail: 'Actionnement du débit', icon: <FiZap size={16} />, tone: 'bg-cyan-50 text-cyan-700 border-cyan-100' },
-    { name: 'Relais 1 canal', detail: 'Commande de puissance', icon: <FiActivity size={16} />, tone: 'bg-slate-50 text-slate-700 border-slate-200' },
-    { name: 'ESP32', detail: 'Microcontrôleur principal', icon: <FiZap size={16} />, tone: 'bg-blue-50 text-blue-700 border-blue-100' },
-    { name: 'DHT22', detail: 'Température et humidité', icon: <FiTrendingUp size={16} />, tone: 'bg-emerald-50 text-emerald-700 border-emerald-100' },
-    { name: 'Bouton poussoir', detail: 'Commande manuelle', icon: <FiCheck size={16} />, tone: 'bg-indigo-50 text-indigo-700 border-indigo-100' },
-    { name: 'Capteur ultrason', detail: 'Mesure du niveau d’eau', icon: <FiCloud size={16} />, tone: 'bg-sky-50 text-sky-700 border-sky-100' },
+    { name: 'relay', detail: 'Commande de puissance', icon: <FiActivity size={16} />, tone: 'bg-slate-50 text-slate-700 border-slate-200' },
+    { name: 'esp32', detail: 'Microcontrôleur principal', icon: <FiZap size={16} />, tone: 'bg-blue-50 text-blue-700 border-blue-100' },
+    { name: 'dht22', detail: 'Température et humidité', icon: <FiTrendingUp size={16} />, tone: 'bg-emerald-50 text-emerald-700 border-emerald-100' },
+    { name: 'pushButton', detail: 'Commande manuelle', icon: <FiCheck size={16} />, tone: 'bg-indigo-50 text-indigo-700 border-indigo-100' },
+    { name: 'ultrasonic', detail: 'Mesure du niveau d’eau', icon: <FiCloud size={16} />, tone: 'bg-sky-50 text-sky-700 border-sky-100' },
     { name: 'Écran LCD', detail: 'Affichage local', icon: <FiActivity size={16} />, tone: 'bg-violet-50 text-violet-700 border-violet-100' },
   ];
 
@@ -247,7 +249,7 @@ export default function DevicesDashboard() {
 
   const cfg = (type: string) => deviceConfig[type] ?? deviceConfig.motion;
   const reservoirLevel = Math.min(Math.max(stats?.latest?.value ?? 0, 0), 100);
-  const reservoirStatus = reservoirLevel > 70 ? 'Optimal' : reservoirLevel > 40 ? 'Normal' : 'Low';
+  const reservoirStatus = reservoirLevel > 70 ? t('dashboard.reservoirOptimal', language as 'en' | 'mg') : reservoirLevel > 40 ? t('dashboard.reservoirNormal', language as 'en' | 'mg') : t('dashboard.reservoirLow', language as 'en' | 'mg');
   const reservoirStatusClass = reservoirLevel > 70
     ? 'bg-green-50 text-green-700'
     : reservoirLevel > 40
@@ -257,9 +259,9 @@ export default function DevicesDashboard() {
   const ReservoirCard = () => (
     <div className="bg-white rounded-xl border border-gray-100 p-6">
       <div className="flex items-center justify-between mb-5">
-        <h2 className="text-sm font-semibold text-gray-700">Reservoir Representation</h2>
+        <h2 className="text-sm font-semibold text-gray-700">{t('dashboard.reservoirRepresentation', language as 'en' | 'mg')}</h2>
         <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${reservoirStatusClass}`}>
-          {stats ? reservoirStatus : 'No data yet'}
+          {stats ? reservoirStatus : t('dashboard.noReadings', language as 'en' | 'mg')}
         </span>
       </div>
 
@@ -342,7 +344,7 @@ export default function DevicesDashboard() {
 
         <div className="w-full max-w-sm space-y-3">
           <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
-            <p className="text-xs text-gray-600 mb-1">Current Water Level</p>
+            <p className="text-xs text-gray-600 mb-1">{t('dashboard.currentWaterLevel', language as 'en' | 'mg')}</p>
             <div className="flex items-baseline gap-2">
               <p className="text-2xl font-bold text-blue-700">{stats?.latest?.value.toFixed(1) ?? '0.0'}</p>
               <p className="text-sm text-gray-500">{stats?.latest?.unit ?? '%'}</p>
@@ -351,11 +353,11 @@ export default function DevicesDashboard() {
 
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-cyan-50 rounded-lg p-3 border border-cyan-100">
-              <p className="text-xs text-gray-600 mb-1">Average</p>
+              <p className="text-xs text-gray-600 mb-1">{t('common.average', language as 'en' | 'mg')}</p>
               <p className="text-lg font-bold text-cyan-700">{stats?.average.toFixed(1) ?? '—'}</p>
             </div>
             <div className="bg-indigo-50 rounded-lg p-3 border border-indigo-100">
-              <p className="text-xs text-gray-600 mb-1">Latest Read</p>
+              <p className="text-xs text-gray-600 mb-1">{t('common.latest', language as 'en' | 'mg')}</p>
               <p className="text-lg font-bold text-indigo-700">{stats?.latest?.value.toFixed(1) ?? '—'}</p>
             </div>
           </div>
@@ -476,8 +478,8 @@ export default function DevicesDashboard() {
               <div className="bg-white rounded-xl border border-gray-100 p-6">
                 <div className="flex items-center justify-between mb-5">
                   <div>
-                    <h2 className="text-sm font-semibold text-gray-700">Matériel utilisé</h2>
-                    <p className="text-xs text-gray-500 mt-1">Montage physique connecté à cette solution de surveillance</p>
+                    <h2 className="text-sm font-semibold text-gray-700">{t('dashboard.waterSystemSetup', language as 'en' | 'mg')}</h2>
+                    <p className="text-xs text-gray-500 mt-1">{t('dashboard.setupDescription', language as 'en' | 'mg')}</p>
                   </div>
                 </div>
 
@@ -489,7 +491,7 @@ export default function DevicesDashboard() {
                           {item.icon}
                         </span>
                         <div>
-                          <p className="font-semibold text-sm text-gray-900">{item.name}</p>
+                          <p className="font-semibold text-sm text-gray-900">{t(`deviceTypes.${item.name}`)}</p>
                           <p className="text-xs text-gray-600 mt-1">{item.detail}</p>
                         </div>
                       </div>
@@ -529,3 +531,4 @@ export default function DevicesDashboard() {
     </Layout>
   );
 }
+

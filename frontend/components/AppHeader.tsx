@@ -1,41 +1,39 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { FiGlobe, FiChevronDown } from 'react-icons/fi';
-import {
-  setLanguage as setI18nLanguage,
-  getLanguage,
-  getAvailableLanguages,
-  type Language,
-} from '@/lib/i18n';
+import { useLanguage } from '@/lib/LanguageContext';
+import { getAvailableLanguages } from '@/lib/i18n';
 
 interface AppHeaderProps {
   title?: string;
 }
 
-export function AppHeader({ title: _title = 'AroRano' }: AppHeaderProps) {
+// Wrapper component to handle hydration safely
+function AppHeaderContent({ title: _title = 'AroRano' }: AppHeaderProps) {
+  const { language: contextLanguage, setLanguage } = useLanguage();
   const [mounted, setMounted] = useState(false);
-  const [language, setLanguage] = useState<Language>('en');
   const [showLanguageMenu, setShowLanguageMenu] = useState(false);
   const [availableLanguages, setAvailableLanguages] = useState<any[]>([]);
 
   useEffect(() => {
     setMounted(true);
-    setLanguage(getLanguage());
     setAvailableLanguages(getAvailableLanguages());
   }, []);
 
-  const handleLanguageChange = (newLang: Language) => {
+  const handleLanguageChange = (newLang: 'en' | 'mg') => {
     setLanguage(newLang);
-    setI18nLanguage(newLang);
     setShowLanguageMenu(false);
+    // Reload to apply language changes throughout the app
     window.location.reload();
   };
 
-  const currentLangLabel = availableLanguages.find((l) => l.code === language)?.nativeName || language.toUpperCase();
+  const currentLangLabel = availableLanguages.find((l) => l.code === contextLanguage)?.nativeName || contextLanguage.toUpperCase();
 
   return (
-    <header className="bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-600 text-white shadow-md sticky top-0 z-40">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+    <header className="w-full bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-600 text-white shadow-md sticky top-0 z-50 flex-shrink-0">
+      <div className="w-full max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center min-h-16">
         <div className="flex items-center gap-2">
           <Image
             src="/images/logo.PNG"
@@ -68,20 +66,22 @@ export function AppHeader({ title: _title = 'AroRano' }: AppHeaderProps) {
               {/* Language Dropdown Menu */}
               {showLanguageMenu && (
                 <div className="absolute top-full right-0 mt-1 bg-white rounded-lg shadow-lg min-w-[220px] z-50 overflow-hidden">
-                  {availableLanguages.map((lang, idx) => (
-                    <button
-                      key={lang.code}
-                      onClick={() => handleLanguageChange(lang.code)}
-                      className={`block w-full text-left px-4 py-3 transition-colors duration-200 ${
-                        language === lang.code
-                          ? 'bg-blue-100 text-blue-600 font-semibold'
-                          : 'text-gray-700 hover:bg-gray-50'
-                      } ${idx !== availableLanguages.length - 1 ? 'border-b border-gray-200' : ''}`}
-                    >
-                      <div className="font-semibold">{lang.name}</div>
-                      <div className="text-xs text-gray-600">({lang.nativeName})</div>
-                    </button>
-                  ))}
+                  {availableLanguages
+                    .filter((l) => l.code !== 'tdx') // Only English and Malagasy for automatic translation
+                    .map((lang) => (
+                      <button
+                        key={lang.code}
+                        onClick={() => handleLanguageChange(lang.code as 'en' | 'mg')}
+                        className={`block w-full text-left px-4 py-3 transition-colors duration-200 ${
+                          contextLanguage === lang.code
+                            ? 'bg-blue-100 text-blue-600 font-semibold'
+                            : 'text-gray-700 hover:bg-gray-50'
+                        }`}
+                      >
+                        <div className="font-semibold">{lang.name}</div>
+                        <div className="text-xs text-gray-600">({lang.nativeName})</div>
+                      </button>
+                    ))}
                 </div>
               )}
             </div>
@@ -90,4 +90,19 @@ export function AppHeader({ title: _title = 'AroRano' }: AppHeaderProps) {
       </div>
     </header>
   );
+}
+
+// Export wrapper that ensures AppHeader only renders on client after hydration
+export function AppHeader(props: AppHeaderProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return <div className="h-16 bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-600" />;
+  }
+
+  return <AppHeaderContent {...props} />;
 }
