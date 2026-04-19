@@ -27,16 +27,82 @@ export default function DevicesDashboard() {
   const [language, setLanguage] = useState('en');
 
   const deviceConfig: Record<string, { icon: React.ReactNode; colorClass: string; bgClass: string }> = {
+    // Sensors
     waterLevel: {
       icon: <FiCloud size={16} />,
       colorClass: 'text-blue-700',
       bgClass: 'bg-blue-50',
+    },
+    rainSensor: {
+      icon: <FiCloud size={16} />,
+      colorClass: 'text-blue-600',
+      bgClass: 'bg-blue-50',
+    },
+    ultrasonic: {
+      icon: <FiCloud size={16} />,
+      colorClass: 'text-cyan-700',
+      bgClass: 'bg-cyan-50',
+    },
+    dht22: {
+      icon: <FiActivity size={16} />,
+      colorClass: 'text-emerald-700',
+      bgClass: 'bg-emerald-50',
     },
     temperature: {
       icon: <FiZap size={16} />,
       colorClass: 'text-orange-700',
       bgClass: 'bg-orange-50',
     },
+    humidity: {
+      icon: <FiActivity size={16} />,
+      colorClass: 'text-teal-700',
+      bgClass: 'bg-teal-50',
+    },
+    
+    // Actuators
+    waterPump: {
+      icon: <FiZap size={16} />,
+      colorClass: 'text-indigo-700',
+      bgClass: 'bg-indigo-50',
+    },
+    relay: {
+      icon: <FiZap size={16} />,
+      colorClass: 'text-purple-700',
+      bgClass: 'bg-purple-50',
+    },
+    
+    // Indicators
+    buzzer: {
+      icon: <FiAlertCircle size={16} />,
+      colorClass: 'text-red-700',
+      bgClass: 'bg-red-50',
+    },
+    ledRGB: {
+      icon: <FiActivity size={16} />,
+      colorClass: 'text-yellow-700',
+      bgClass: 'bg-yellow-50',
+    },
+    lcdScreen: {
+      icon: <FiActivity size={16} />,
+      colorClass: 'text-violet-700',
+      bgClass: 'bg-violet-50',
+    },
+    
+    // Control
+    pushButton: {
+      icon: <FiCheck size={16} />,
+      colorClass: 'text-slate-700',
+      bgClass: 'bg-slate-50',
+    },
+    
+    // Microcontroller
+    esp32: {
+      icon: <FiZap size={16} />,
+      colorClass: 'text-pink-700',
+      bgClass: 'bg-pink-50',
+    },
+    
+    // Legacy
     turbidity: {
       icon: <FiActivity size={16} />,
       colorClass: 'text-amber-700',

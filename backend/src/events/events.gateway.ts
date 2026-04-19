@@ -73,6 +73,11 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
    * Broadcast sensor reading to all connected clients subscribed to the device
    */
   broadcastSensorReading(deviceId: string, reading: any): void {
+    if (!this.server) {
+      this.logger.debug(`WebSocket server not initialized, skipping sensorReading broadcast`);
+      return;
+    }
+    
     const clients = this.deviceConnections.get(deviceId);
     
     if (clients && clients.size > 0) {
@@ -92,6 +97,11 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
    * Broadcast device status update to all connected clients
    */
   broadcastDeviceUpdate(deviceId: string, device: any): void {
+    if (!this.server) {
+      this.logger.debug(`WebSocket server not initialized, skipping deviceUpdated broadcast`);
+      return;
+    }
+    
     this.server.emit('deviceUpdated', {
       deviceId,
       device,
@@ -105,6 +115,11 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
    * Broadcast device created event
    */
   broadcastDeviceCreated(device: any): void {
+    if (!this.server) {
+      this.logger.debug(`WebSocket server not initialized, skipping deviceCreated broadcast`);
+      return;
+    }
+    
     this.server.emit('deviceCreated', {
       device,
       timestamp: new Date(),
@@ -117,6 +132,11 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
    * Broadcast device deleted event
    */
   broadcastDeviceDeleted(deviceId: string): void {
+    if (!this.server) {
+      this.logger.debug(`WebSocket server not initialized, skipping deviceDeleted broadcast`);
+      return;
+    }
+    
     this.server.emit('deviceDeleted', {
       deviceId,
       timestamp: new Date(),

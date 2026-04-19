@@ -13,7 +13,7 @@ RUN npm ci
 COPY tsconfig.json ./
 COPY src ./src
 
-# Build the application
+# Build the application (includes seed.ts compilation)
 RUN npm run build
 
 # Stage 2: Runtime
