@@ -11,6 +11,7 @@ export function LanguageSwitcher() {
   const languages = [
     { code: 'en', name: 'English', flag: '🇬🇧' },
     { code: 'mg', name: 'Malagasy', flag: '🇲🇬' },
+    { code: 'tdx', name: 'Tandroy', flag: '🏜️' },
   ] as const;
 
   return (
@@ -39,7 +40,7 @@ export function LanguageSwitcher() {
               <button
                 key={lang.code}
                 onClick={() => {
-                  setLanguage(lang.code as 'en' | 'mg');
+                  setLanguage(lang.code as 'en' | 'mg' | 'tdx');
                   setIsOpen(false);
                 }}
                 className={`w-full text-left px-3 py-2 rounded-md transition-colors ${

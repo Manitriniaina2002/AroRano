@@ -1,6 +1,7 @@
 import io, { Socket } from 'socket.io-client';
+import { getApiOrigin } from './runtime-config';
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const SOCKET_URL = getApiOrigin();
 
 let socket: Socket | null = null;
 

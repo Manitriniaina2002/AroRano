@@ -218,6 +218,23 @@ docker-compose up -d
 - **API Root:** http://localhost:3001/api
 - **API Docs:** http://localhost:3001/api/docs (Swagger UI)
 - **Health Check:** http://localhost:3001/api/health
+- **ESP32 Ingest:** `http://YOUR_PC_IP:3001/api/esp32/data`
+
+## ESP32 On Local Network
+
+To let the ESP32 send data to this backend over Wi-Fi:
+
+1. Run the backend so it listens on `0.0.0.0`.
+2. Use your computer's Wi-Fi IPv4 address as the ESP32 target host.
+3. Post sensor data to `http://YOUR_PC_IP:3001/api/esp32/data`.
+
+Example on this machine:
+
+```text
+http://192.168.88.16:3001/api/esp32/data
+```
+
+The ESP32 and this computer must be on the same Wi-Fi network, and Windows Firewall must allow inbound TCP traffic on port `3001`.
 
 ## 📡 API Endpoints
 

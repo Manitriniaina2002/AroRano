@@ -68,7 +68,7 @@ This will return a JSON array with all devices and their UUIDs. Note down the de
 
 Update your ESP32 code with:
 - WiFi credentials
-- Backend URL (e.g., `http://192.168.X.X:3001`)
+- Backend URL (e.g., `http://192.168.X.X:3001/api/esp32/data`)
 - Device IDs from step 2
 - Pin configuration (see ESP32_INTEGRATION.md)
 

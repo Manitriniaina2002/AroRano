@@ -157,12 +157,32 @@ export default function DevicesDashboard() {
           // Continue even if WebSocket fails
         }
 
-        // Load initial data
-        let data = await api.devices.getAll();
-        
-        setDevices(data);
-        if (data.length > 0 && !selectedDevice) {
-          setSelectedDevice(data[0]);
+        // Try to load ESP32 data first
+        try {
+          const esp32Data = await api.esp32.getData(50, 'reservoir_01');
+          if (esp32Data && esp32Data.length > 0) {
+            setRealtimeReadings(esp32Data);
+            // Create a mock device for ESP32
+            const mockDevice: Device = {
+              id: 'reservoir_01',
+              name: 'ESP32 Contrôleur Principal',
+              type: 'esp32',
+              location: 'Réservoir d\'eau',
+              status: 'connected',
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            };
+            setSelectedDevice(mockDevice);
+          }
+        } catch (esp32Err) {
+          console.warn('Failed to load ESP32 data, falling back to devices API:', esp32Err);
+          
+          // Fallback to devices API
+          let data = await api.devices.getAll();
+          setDevices(data);
+          if (data.length > 0 && !selectedDevice) {
+            setSelectedDevice(data[0]);
+          }
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : t('common.error', language as 'en' | 'mg'));
@@ -193,8 +213,13 @@ export default function DevicesDashboard() {
   // Load stats and subscribe to real-time updates when device changes
   useEffect(() => {
     if (selectedDevice) {
-      loadStats(selectedDevice.id);
-      loadReadings(selectedDevice.id);
+      // Load ESP32 specific data if it's an ESP32 device
+      if (selectedDevice.type === 'esp32' || selectedDevice.id === 'reservoir_01') {
+        loadESP32Data(selectedDevice.id);
+      } else {
+        loadStats(selectedDevice.id);
+        loadReadings(selectedDevice.id);
+      }
 
       // Subscribe to this device's real-time data
       websocket.subscribeToDevice(selectedDevice.id);
@@ -247,12 +272,37 @@ export default function DevicesDashboard() {
     }
   };
 
+  const loadESP32Data = async (deviceId: string) => {
+    try {
+      const readings = await api.esp32.getReadings(deviceId, 100);
+      if (readings && readings.data) {
+        setRealtimeReadings(readings.data);
+      } else if (Array.isArray(readings)) {
+        setRealtimeReadings(readings);
+      }
+    } catch (err) {
+      console.error('Error loading ESP32 data:', err);
+    }
+  };
+
   const cfg = (type: string) => deviceConfig[type] ?? deviceConfig.motion;
-  const reservoirLevel = Math.min(Math.max(stats?.latest?.value ?? 0, 0), 100);
-  const reservoirStatus = reservoirLevel > 70 ? t('dashboard.reservoirOptimal', language as 'en' | 'mg') : reservoirLevel > 40 ? t('dashboard.reservoirNormal', language as 'en' | 'mg') : t('dashboard.reservoirLow', language as 'en' | 'mg');
-  const reservoirStatusClass = reservoirLevel > 70
+  // Use ESP32 water level if available, otherwise fall back to stats
+  const waterLevelPercent = realtimeReadings.length > 0 
+    ? (realtimeReadings[0] as any)?.waterLevelPercent 
+    : stats?.latest?.value;
+  const reservoirLevel = Math.min(Math.max(waterLevelPercent ?? 0, 0), 100);
+  
+  // Determine status based on water level
+  const getReservoirStatus = (level: number) => {
+    if (level > 80) return t('dashboard.reservoirOptimal', language as 'en' | 'mg');
+    if (level > 30) return t('dashboard.reservoirNormal', language as 'en' | 'mg');
+    return t('dashboard.reservoirLow', language as 'en' | 'mg');
+  };
+  
+  const reservoirStatus = getReservoirStatus(reservoirLevel);
+  const reservoirStatusClass = reservoirLevel > 80
     ? 'bg-green-50 text-green-700'
-    : reservoirLevel > 40
+    : reservoirLevel > 30
       ? 'bg-amber-50 text-amber-700'
       : 'bg-red-50 text-red-700';
 
@@ -343,22 +393,79 @@ export default function DevicesDashboard() {
         </div>
 
         <div className="w-full max-w-sm space-y-3">
+          {/* Water Level Card */}
           <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
             <p className="text-xs text-gray-600 mb-1">{t('dashboard.currentWaterLevel', language as 'en' | 'mg')}</p>
             <div className="flex items-baseline gap-2">
-              <p className="text-2xl font-bold text-blue-700">{stats?.latest?.value.toFixed(1) ?? '0.0'}</p>
-              <p className="text-sm text-gray-500">{stats?.latest?.unit ?? '%'}</p>
+              <p className="text-2xl font-bold text-blue-700">
+                {realtimeReadings.length > 0 
+                  ? (realtimeReadings[0] as any)?.waterLevelPercent?.toFixed(0) 
+                  : stats?.latest?.value?.toFixed(1) ?? '0.0'}
+              </p>
+              <p className="text-sm text-gray-500">%</p>
+            </div>
+            {realtimeReadings.length > 0 && (
+              <p className="text-xs text-gray-500 mt-1">
+                {(realtimeReadings[0] as any)?.waterLevelCm?.toFixed(1)} cm
+              </p>
+            )}
+          </div>
+
+          {/* Temperature & Humidity */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-orange-50 rounded-lg p-3 border border-orange-100">
+              <p className="text-xs text-gray-600 mb-1">Temperature</p>
+              <p className="text-lg font-bold text-orange-700">
+                {realtimeReadings.length > 0 
+                  ? (realtimeReadings[0] as any)?.temperature?.toFixed(1)
+                  : '—'}
+                <span className="text-xs ml-0.5">°C</span>
+              </p>
+            </div>
+            <div className="bg-teal-50 rounded-lg p-3 border border-teal-100">
+              <p className="text-xs text-gray-600 mb-1">Humidity</p>
+              <p className="text-lg font-bold text-teal-700">
+                {realtimeReadings.length > 0 
+                  ? (realtimeReadings[0] as any)?.humidity
+                  : '—'}
+                <span className="text-xs ml-0.5">%</span>
+              </p>
             </div>
           </div>
 
+          {/* Pump & Alert Status */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="bg-cyan-50 rounded-lg p-3 border border-cyan-100">
-              <p className="text-xs text-gray-600 mb-1">{t('common.average', language as 'en' | 'mg')}</p>
-              <p className="text-lg font-bold text-cyan-700">{stats?.average.toFixed(1) ?? '—'}</p>
+            <div className={`rounded-lg p-3 border ${(realtimeReadings.length > 0 && (realtimeReadings[0] as any)?.pumpStatus === 'ON') ? 'bg-green-50 border-green-100' : 'bg-gray-50 border-gray-100'}`}>
+              <p className="text-xs text-gray-600 mb-1">Pump Status</p>
+              <div className="flex items-center gap-1.5">
+                <span className={`w-2 h-2 rounded-full ${(realtimeReadings.length > 0 && (realtimeReadings[0] as any)?.pumpStatus === 'ON') ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
+                <p className={`text-lg font-bold ${(realtimeReadings.length > 0 && (realtimeReadings[0] as any)?.pumpStatus === 'ON') ? 'text-green-700' : 'text-gray-700'}`}>
+                  {realtimeReadings.length > 0 
+                    ? (realtimeReadings[0] as any)?.pumpStatus 
+                    : 'OFF'}
+                </p>
+              </div>
             </div>
-            <div className="bg-indigo-50 rounded-lg p-3 border border-indigo-100">
-              <p className="text-xs text-gray-600 mb-1">{t('common.latest', language as 'en' | 'mg')}</p>
-              <p className="text-lg font-bold text-indigo-700">{stats?.latest?.value.toFixed(1) ?? '—'}</p>
+            <div className={`rounded-lg p-3 border ${(realtimeReadings.length > 0 && (realtimeReadings[0] as any)?.alert === 'CRITICAL') ? 'bg-red-50 border-red-100' : (realtimeReadings.length > 0 && (realtimeReadings[0] as any)?.alert === 'WARNING') ? 'bg-yellow-50 border-yellow-100' : 'bg-green-50 border-green-100'}`}>
+              <p className="text-xs text-gray-600 mb-1">Alert Level</p>
+              <p className={`text-lg font-bold ${(realtimeReadings.length > 0 && (realtimeReadings[0] as any)?.alert === 'CRITICAL') ? 'text-red-700' : (realtimeReadings.length > 0 && (realtimeReadings[0] as any)?.alert === 'WARNING') ? 'text-yellow-700' : 'text-green-700'}`}>
+                {realtimeReadings.length > 0 
+                  ? (realtimeReadings[0] as any)?.alert 
+                  : 'NORMAL'}
+              </p>
+            </div>
+          </div>
+
+          {/* Rain Detection */}
+          <div className="bg-slate-50 rounded-lg p-3 border border-slate-100">
+            <p className="text-xs text-gray-600 mb-1">Rain Detection</p>
+            <div className="flex items-center gap-1.5">
+              <span className={`w-2 h-2 rounded-full ${realtimeReadings.length > 0 && (realtimeReadings[0] as any)?.rainDetected ? 'bg-blue-500' : 'bg-gray-400'}`} />
+              <p className={`text-sm font-bold ${realtimeReadings.length > 0 && (realtimeReadings[0] as any)?.rainDetected ? 'text-blue-700' : 'text-gray-700'}`}>
+                {realtimeReadings.length > 0 
+                  ? ((realtimeReadings[0] as any)?.rainDetected ? 'Detected' : 'None')
+                  : 'No data'}
+              </p>
             </div>
           </div>
         </div>
@@ -500,6 +607,77 @@ export default function DevicesDashboard() {
                 </div>
               </div>
 
+              {/* ESP32 Real-time Monitoring */}
+              <div className="bg-white rounded-xl border border-gray-100 p-6">
+                <div className="flex items-center gap-2 mb-5">
+                  <FiActivity size={18} className="text-indigo-500" />
+                  <h2 className="text-sm font-semibold text-gray-700">ESP32 Real-time Monitoring</h2>
+                  <span className="ml-auto w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                </div>
+                
+                {realtimeReadings.length === 0 ? (
+                  <p className="text-sm text-gray-400 text-center py-6">Waiting for sensor data...</p>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Water Level */}
+                    <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg p-4 border border-blue-100">
+                      <p className="text-xs text-gray-600 mb-2">Water Level</p>
+                      <p className="text-3xl font-bold text-blue-600 mb-1">
+                        {(realtimeReadings[0] as any)?.waterLevelPercent || realtimeReadings[0]?.value?.toFixed(1) || '—'}
+                        <span className="text-sm text-gray-500 ml-1">%</span>
+                      </p>
+                      <p className="text-xs text-gray-500">{new Date((realtimeReadings[0] as any)?.timestamp).toLocaleTimeString()}</p>
+                    </div>
+
+                    {/* Temperature */}
+                    <div className="bg-gradient-to-br from-orange-50 to-red-50 rounded-lg p-4 border border-orange-100">
+                      <p className="text-xs text-gray-600 mb-2">Temperature</p>
+                      <p className="text-3xl font-bold text-orange-600 mb-1">
+                        {(realtimeReadings[0] as any)?.temperature?.toFixed(1) || '—'}
+                        <span className="text-sm text-gray-500 ml-1">°C</span>
+                      </p>
+                      <p className="text-xs text-gray-500">From DHT22 Sensor</p>
+                    </div>
+
+                    {/* Humidity */}
+                    <div className="bg-gradient-to-br from-teal-50 to-green-50 rounded-lg p-4 border border-teal-100">
+                      <p className="text-xs text-gray-600 mb-2">Humidity</p>
+                      <p className="text-3xl font-bold text-teal-600 mb-1">
+                        {(realtimeReadings[0] as any)?.humidity || '—'}
+                        <span className="text-sm text-gray-500 ml-1">%</span>
+                      </p>
+                      <p className="text-xs text-gray-500">From DHT22 Sensor</p>
+                    </div>
+
+                    {/* Pump Status */}
+                    <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-lg p-4 border border-indigo-100">
+                      <p className="text-xs text-gray-600 mb-2">Pump Status</p>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className={`w-2.5 h-2.5 rounded-full ${(realtimeReadings[0] as any)?.pumpStatus === 'ON' ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
+                        <p className="text-lg font-bold text-indigo-600">{(realtimeReadings[0] as any)?.pumpStatus || 'OFF'}</p>
+                      </div>
+                      <p className="text-xs text-gray-500">{(realtimeReadings[0] as any)?.pumpStatus === 'ON' ? 'Running normally' : 'Idle'}</p>
+                    </div>
+
+                    {/* Alert Level */}
+                    <div className="bg-gradient-to-br from-yellow-50 to-amber-50 rounded-lg p-4 border border-amber-100">
+                      <p className="text-xs text-gray-600 mb-2">Alert Level</p>
+                      <p className="text-lg font-bold text-amber-600 mb-1">{(realtimeReadings[0] as any)?.alert || 'NORMAL'}</p>
+                      <p className="text-xs text-gray-500">
+                        {(realtimeReadings[0] as any)?.alert === 'NORMAL' ? 'Water level is optimal' : 'Check system status'}
+                      </p>
+                    </div>
+
+                    {/* Rain Detection */}
+                    <div className="bg-gradient-to-br from-slate-50 to-gray-50 rounded-lg p-4 border border-gray-200">
+                      <p className="text-xs text-gray-600 mb-2">Signal Strength</p>
+                      <p className="text-lg font-bold text-slate-600 mb-1">Strong</p>
+                      <p className="text-xs text-gray-500">RSSI: -45 dBm</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {/* Live readings */}
               <div className="bg-white rounded-xl border border-gray-100">
                 <div className="flex items-center gap-2 px-5 py-4 border-b border-gray-100">
@@ -514,8 +692,17 @@ export default function DevicesDashboard() {
                     {realtimeReadings.map((reading, idx) => (
                       <div key={idx} className="flex items-center justify-between px-5 py-3 hover:bg-gray-50 transition-colors">
                         <div>
-                          <span className="text-sm font-medium text-gray-800">{reading.value} {reading.unit}</span>
-                          <span className="text-xs text-gray-400 ml-3">{reading.timestamp}</span>
+                          <span className="text-sm font-medium text-gray-800">
+                            Lvl: {(reading as any)?.waterLevelPercent || reading.value}
+                            {(reading as any)?.waterLevelPercent ? '%' : reading.unit}
+                            {' | '}
+                            Temp: {(reading as any)?.temperature || '—'}°C
+                            {' | '}
+                            Humidity: {(reading as any)?.humidity || '—'}%
+                          </span>
+                          <span className="text-xs text-gray-400 ml-3">
+                            {new Date((reading as any)?.timestamp || reading.timestamp).toLocaleString()}
+                          </span>
                         </div>
                         <span className="w-5 h-5 rounded-full bg-green-50 flex items-center justify-center">
                           <FiCheck size={11} className="text-green-600" />

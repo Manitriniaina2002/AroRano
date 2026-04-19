@@ -20,9 +20,14 @@ export class ESP32Service {
    */
   async receiveESP32Data(dto: CreateESP32ReadingDto): Promise<ESP32Reading> {
     try {
+      // Use server-side timestamp if not provided, otherwise use provided timestamp
+      const timestamp = dto.timestamp 
+        ? new Date(dto.timestamp)
+        : new Date();
+
       const reading = this.esp32Repository.create({
         deviceId: dto.device_id,
-        timestamp: new Date(dto.timestamp),
+        timestamp: timestamp,
         waterLevelCm: dto.water_level_cm,
         waterLevelPercent: dto.water_level_percent,
         temperature: dto.temperature,
@@ -93,6 +98,25 @@ export class ESP32Service {
       .andWhere('reading.timestamp <= :endDate', { endDate })
       .orderBy('reading.timestamp', 'DESC')
       .getMany();
+  }
+
+  /**
+   * Get recent readings from all or specific device
+   */
+  async getRecentData(
+    limit: number = 50,
+    deviceId?: string,
+  ): Promise<ESP32Reading[]> {
+    let query = this.esp32Repository
+      .createQueryBuilder('reading')
+      .orderBy('reading.timestamp', 'DESC')
+      .take(limit);
+
+    if (deviceId) {
+      query = query.where('reading.deviceId = :deviceId', { deviceId });
+    }
+
+    return await query.getMany();
   }
 
   /**

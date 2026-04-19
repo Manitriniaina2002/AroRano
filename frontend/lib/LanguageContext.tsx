@@ -4,15 +4,15 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { getUserLanguage, saveLanguage } from './ai-translate';
 
 interface LanguageContextType {
-  language: 'en' | 'mg';
-  setLanguage: (lang: 'en' | 'mg') => void;
+  language: 'en' | 'mg' | 'tdx';
+  setLanguage: (lang: 'en' | 'mg' | 'tdx') => void;
   isAutoDetect: boolean;
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguageState] = useState<'en' | 'mg'>('mg');
+  const [language, setLanguageState] = useState<'en' | 'mg' | 'tdx'>('mg');
   const [isAutoDetect, setIsAutoDetect] = useState(true);
 
   useEffect(() => {
@@ -22,7 +22,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     setIsAutoDetect(!localStorage.getItem('arorano_language'));
   }, []);
 
-  const setLanguage = (lang: 'en' | 'mg') => {
+  const setLanguage = (lang: 'en' | 'mg' | 'tdx') => {
     setLanguageState(lang);
     saveLanguage(lang);
     setIsAutoDetect(false);

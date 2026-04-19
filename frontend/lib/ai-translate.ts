@@ -50,6 +50,7 @@ const MANUAL_TRANSLATIONS: Record<string, string> = {
   'Language': 'Fiteny',
   'English': 'English',
   'Malagasy': 'Malagasy',
+  'Tandroy': 'Tandroy',
   'Refresh': 'Havaozy',
   'Search': 'Tadiavo',
   'Filter': 'Sisao',
@@ -61,7 +62,7 @@ const MANUAL_TRANSLATIONS: Record<string, string> = {
 /**
  * Detect user's preferred language from browser
  */
-export function detectBrowserLanguage(): 'en' | 'mg' {
+export function detectBrowserLanguage(): 'en' | 'mg' | 'tdx' {
   if (typeof window === 'undefined') return 'en';
   
   const browserLang = navigator.language?.split('-')[0].toLowerCase() || 'en';
@@ -82,15 +83,15 @@ export function detectBrowserLanguage(): 'en' | 'mg' {
 /**
  * Get language preference from localStorage
  */
-export function getSavedLanguage(): 'en' | 'mg' | null {
+export function getSavedLanguage(): 'en' | 'mg' | 'tdx' | null {
   if (typeof window === 'undefined') return null;
-  return (localStorage.getItem('arorano_language') as 'en' | 'mg') || null;
+  return (localStorage.getItem('arorano_language') as 'en' | 'mg' | 'tdx') || null;
 }
 
 /**
  * Save language preference to localStorage
  */
-export function saveLanguage(lang: 'en' | 'mg'): void {
+export function saveLanguage(lang: 'en' | 'mg' | 'tdx'): void {
   if (typeof window !== 'undefined') {
     localStorage.setItem('arorano_language', lang);
   }
@@ -99,7 +100,7 @@ export function saveLanguage(lang: 'en' | 'mg'): void {
 /**
  * Get user's language preference (saved > browser > default)
  */
-export function getUserLanguage(): 'en' | 'mg' {
+export function getUserLanguage(): 'en' | 'mg' | 'tdx' {
   const saved = getSavedLanguage();
   if (saved) return saved;
   

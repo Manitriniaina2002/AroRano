@@ -22,7 +22,7 @@ function AppHeaderContent({ title: _title = 'AroRano' }: AppHeaderProps) {
     setAvailableLanguages(getAvailableLanguages());
   }, []);
 
-  const handleLanguageChange = (newLang: 'en' | 'mg') => {
+  const handleLanguageChange = (newLang: 'en' | 'mg' | 'tdx') => {
     setLanguage(newLang);
     setShowLanguageMenu(false);
   };
@@ -35,7 +35,7 @@ function AppHeaderContent({ title: _title = 'AroRano' }: AppHeaderProps) {
         <div className="flex items-center gap-2">
           <Image
             src="/images/logo.PNG"
-            alt={t('common.logoAlt', contextLanguage as 'en' | 'mg')}
+            alt={t('common.logoAlt', contextLanguage as 'en' | 'mg' | 'tdx')}
             width={36}
             height={36}
             className="w-9 h-9 object-contain"
@@ -65,11 +65,10 @@ function AppHeaderContent({ title: _title = 'AroRano' }: AppHeaderProps) {
               {showLanguageMenu && (
                 <div className="absolute top-full right-0 mt-1 bg-white rounded-lg shadow-lg min-w-[220px] z-50 overflow-hidden">
                   {availableLanguages
-                    .filter((l) => l.code !== 'tdx') // Only English and Malagasy for automatic translation
                     .map((lang) => (
                       <button
                         key={lang.code}
-                        onClick={() => handleLanguageChange(lang.code as 'en' | 'mg')}
+                        onClick={() => handleLanguageChange(lang.code as 'en' | 'mg' | 'tdx')}
                         className={`block w-full text-left px-4 py-3 transition-colors duration-200 ${
                           contextLanguage === lang.code
                             ? 'bg-blue-100 text-blue-600 font-semibold'

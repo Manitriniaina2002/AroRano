@@ -1,4 +1,4 @@
-import { IsString, IsNumber, IsBoolean, IsDateString, IsIn, Min, Max } from 'class-validator';
+import { IsString, IsNumber, IsBoolean, IsDateString, IsIn, Min, Max, IsOptional } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -7,9 +7,10 @@ export class CreateESP32ReadingDto {
   @IsString()
   device_id: string;
 
-  @ApiProperty({ example: '2026-04-19T06:30:00Z', description: 'Timestamp from ESP32' })
+  @ApiProperty({ example: '2026-04-19T06:30:00Z', description: 'Timestamp from ESP32 (optional, server uses current time if not provided)', required: false })
+  @IsOptional()
   @IsDateString()
-  timestamp: string;
+  timestamp?: string;
 
   @ApiProperty({ example: 35.2, description: 'Water level in centimeters' })
   @IsNumber()

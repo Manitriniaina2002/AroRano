@@ -36,6 +36,27 @@ export class ESP32Controller {
   }
 
   /**
+   * Get recent ESP32 data from all devices
+   * GET /api/esp32/data
+   */
+  @Get('data')
+  @ApiOperation({
+    summary: 'Get recent ESP32 data',
+    description: 'Retrieve recent sensor readings from all ESP32 devices',
+  })
+  @ApiOkResponse({ type: [ESP32ReadingResponseDto] })
+  async getRecentData(
+    @Query('limit') limit: string = '50',
+    @Query('deviceId') deviceId?: string,
+  ): Promise<ESP32Reading[]> {
+    const limitNum = Math.min(parseInt(limit) || 50, 500);
+    if (limitNum < 1) {
+      throw new BadRequestException('limit must be >= 1');
+    }
+    return await this.esp32Service.getRecentData(limitNum, deviceId);
+  }
+
+  /**
    * Get latest reading from a device
    * GET /api/esp32/devices/:deviceId/latest
    */
@@ -142,6 +163,29 @@ export class ESP32Controller {
   async healthCheck(): Promise<{ status: string; timestamp: Date }> {
     return {
       status: 'OK',
+      timestamp: new Date(),
+    };
+  }
+
+  /**
+   * Get API status and information
+   * GET /api/esp32
+   */
+  @Get()
+  @ApiOperation({ summary: 'Get ESP32 API status' })
+  async getStatus(): Promise<{ status: string; message: string; endpoints: object; timestamp: Date }> {
+    return {
+      status: 'operational',
+      message: 'ESP32 API is running',
+      endpoints: {
+        health: 'GET /api/esp32/health',
+        getAllDevices: 'GET /api/esp32/devices',
+        receiveData: 'POST /api/esp32/data',
+        getLatestReading: 'GET /api/esp32/devices/:deviceId/latest',
+        getReadings: 'GET /api/esp32/devices/:deviceId/readings',
+        getReadingsByRange: 'GET /api/esp32/devices/:deviceId/readings/range',
+        getStats: 'GET /api/esp32/devices/:deviceId/stats',
+      },
       timestamp: new Date(),
     };
   }
