@@ -72,17 +72,19 @@ export default function Home() {
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(34,211,238,0.28),_transparent_28%),radial-gradient(circle_at_bottom_left,_rgba(59,130,246,0.25),_transparent_32%),linear-gradient(135deg,_rgba(15,23,42,0.98),_rgba(8,47,73,0.92))]" />
                 <div className="relative grid gap-8 xl:grid-cols-[1fr_320px] xl:items-center">
                   <div className="space-y-6">
-                    <div className="flex items-center gap-3">
-                      <Image src="/images/logo.PNG" alt="AroRano logo" width={64} height={64} className="h-14 w-14 rounded-2xl object-contain shadow-lg" unoptimized />
+                    <div className="flex flex-col gap-6 lg:flex-row lg:items-center">
+                      <div className="relative h-28 w-28 sm:h-32 sm:w-32 rounded-[2rem] border border-white/20 bg-cyan-500/10 p-4 shadow-2xl">
+                        <Image src="/images/logo.PNG" alt="AroRano logo" width={128} height={128} className="h-full w-full rounded-[1.5rem] object-contain" unoptimized />
+                      </div>
                       <div>
-                        <p className="text-xs uppercase tracking-[0.28em] text-cyan-200/70">AroRano</p>
-                        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl lg:text-5xl">Modern water intelligence.</h1>
+                        <p className="text-sm uppercase tracking-[0.32em] text-cyan-200/70">AroRano</p>
+                        <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl lg:text-6xl">Water monitoring, simplified.</h1>
                       </div>
                     </div>
 
-                    <p className="max-w-2xl text-sm leading-6 text-slate-200/85 sm:text-base">
+                    <p className="max-w-2xl text-base leading-8 text-slate-200/90 sm:text-lg">
                       Real-time reservoir monitoring, operator accounts, and IoT telemetry in one polished control surface.
-                      Designed to make the important state obvious in a single glance.
+                      Built for Malagasy operators who need signal, not noise.
                     </p>
 
                     <div className="flex flex-wrap gap-3">
