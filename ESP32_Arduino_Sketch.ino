@@ -2,7 +2,7 @@
 #include <HTTPClient.h>
 #include <DHT.h>
 #include <Wire.h>
-#include <LiquidCrystal_I2C.h>
+#include <LiquidCrystal_I2C.h>  // ESP32 compatible version
 
 // ===== WIFI =====
 const char* ssid = "123";
@@ -35,8 +35,9 @@ float waterLevelPercent = 0.0;
 bool pumpState = false;
 
 // ===== CONFIGURATION =====
-float referenceDistance = 6.0;    // cm - Distance when tank is FULL
-float tankDepth = 50.0;           // cm - Total depth from empty to full
+// Calibration: measure distance at EMPTY and FULL states
+float emptyDistance = 6.1;        // cm - Distance reading when tank is EMPTY
+float fullDistance = 56.0;        // cm - Distance reading when tank is FULL (adjust based on actual)
 float lowThreshold = 30.0;        // % - Pump ON threshold
 float highThreshold = 80.0;       // % - Pump OFF threshold
 
@@ -143,9 +144,9 @@ void sendData(float temp, float hum, bool rain, float distanceCm) {
     alert = "WARNING";
   }
 
-  // Build JSON payload
+  // Build JSON payload with proper escaping
   char json[512];
-  int len = snprintf(json, sizeof(json),
+  snprintf(json, sizeof(json),
     "{\"device_id\":\"reservoir_01\","
     "\"water_level_cm\":%.1f,"
     "\"water_level_percent\":%.0f,"
@@ -219,10 +220,12 @@ void loop() {
   // Read all sensors
   float distance = readUltrasonic();
   
-  // Calculate water level percentage
-  // When distance = referenceDistance (6cm) → 100% (full)
-  // When distance = referenceDistance + tankDepth (56cm) → 0% (empty)
-  waterLevelPercent = 100.0 - (((distance - referenceDistance) / tankDepth) * 100.0);
+  // Calculate water level percentage using two-point calibration
+  // Sensor is closer when water is HIGH (6cm = 100% full)
+  // Sensor is farther when water is LOW (56cm = 0% empty)
+  // Formula: percent = ((emptyDistance - distance) / (emptyDistance - fullDistance)) * 100
+  float tankRange = emptyDistance - fullDistance;
+  waterLevelPercent = ((emptyDistance - distance) / tankRange) * 100.0;
   
   // Clamp values between 0-100%
   if (waterLevelPercent < 0) waterLevelPercent = 0;

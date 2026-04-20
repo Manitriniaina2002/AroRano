@@ -10,6 +10,18 @@ const apiClient = axios.create({
   },
 });
 
+apiClient.interceptors.request.use((config) => {
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      config.headers = config.headers ?? {};
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+
+  return config;
+});
+
 export interface HealthResponse {
   status: string;
   message: string;
@@ -46,7 +58,61 @@ export interface DeviceStats {
   latest: SensorReading | null;
 }
 
+export interface UserSummary {
+  id: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  role: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface ESP32Reading {
+  id: string;
+  deviceId: string;
+  timestamp: string;
+  waterLevelCm: number;
+  waterLevelPercent: number;
+  temperature: number;
+  humidity: number;
+  rainDetected: boolean;
+  pumpStatus: string;
+  alert: string;
+  createdAt: string;
+}
+
+export interface ESP32Stats {
+  avgWaterLevelCm: number;
+  avgWaterLevelPercent: number;
+  avgTemperature: number;
+  avgHumidity: number;
+  maxWaterLevelCm: number;
+  minWaterLevelCm: number;
+  maxTemperature: number;
+  minTemperature: number;
+  rainDetectedCount: number;
+  totalReadings: number;
+  latestAlert: string;
+  latestPumpStatus: string;
+}
+
 export const api = {
+  auth: {
+    getUsers: async (): Promise<UserSummary[]> => {
+      const response = await apiClient.get<{ success: boolean; data: UserSummary[] }>('/auth/users');
+      return response.data.data;
+    },
+
+    updateUserStatus: async (id: string, isActive: boolean): Promise<UserSummary> => {
+      const response = await apiClient.patch<{ success: boolean; data: UserSummary }>(`/auth/users/${id}/status`, {
+        isActive,
+      });
+      return response.data.data;
+    },
+  },
+
   /**
    * Check API health status
    */
@@ -137,35 +203,39 @@ export const api = {
     /**
      * Get recent ESP32 data
      */
-    getData: async (limit: number = 50, deviceId?: string) => {
+    getData: async (limit: number = 50, deviceId?: string): Promise<ESP32Reading[]> => {
       const params = new URLSearchParams();
       params.append('limit', limit.toString());
       if (deviceId) params.append('deviceId', deviceId);
-      const response = await apiClient.get(`/api/esp32/data?${params.toString()}`);
+      const response = await apiClient.get<ESP32Reading[]>(`/api/esp32/data?${params.toString()}`);
       return response.data;
     },
 
     /**
      * Get all ESP32 devices
      */
-    getDevices: async () => {
-      const response = await apiClient.get('/api/esp32/devices');
+    getDevices: async (): Promise<{ devices: string[] }> => {
+      const response = await apiClient.get<{ devices: string[] }>('/api/esp32/devices');
       return response.data;
     },
 
     /**
      * Get latest reading from device
      */
-    getLatestReading: async (deviceId: string) => {
-      const response = await apiClient.get(`/api/esp32/devices/${deviceId}/latest`);
+    getLatestReading: async (deviceId: string): Promise<ESP32Reading | null> => {
+      const response = await apiClient.get<ESP32Reading | null>(`/api/esp32/devices/${deviceId}/latest`);
       return response.data;
     },
 
     /**
      * Get readings from device
      */
-    getReadings: async (deviceId: string, limit: number = 100, offset: number = 0) => {
-      const response = await apiClient.get(`/api/esp32/devices/${deviceId}/readings`, {
+    getReadings: async (
+      deviceId: string,
+      limit: number = 100,
+      offset: number = 0,
+    ): Promise<{ data: ESP32Reading[]; total: number }> => {
+      const response = await apiClient.get<{ data: ESP32Reading[]; total: number }>(`/api/esp32/devices/${deviceId}/readings`, {
         params: { limit, offset },
       });
       return response.data;
@@ -174,8 +244,8 @@ export const api = {
     /**
      * Get device statistics
      */
-    getStats: async (deviceId: string, hoursBack: number = 24) => {
-      const response = await apiClient.get(`/api/esp32/devices/${deviceId}/stats`, {
+    getStats: async (deviceId: string, hoursBack: number = 24): Promise<ESP32Stats> => {
+      const response = await apiClient.get<ESP32Stats>(`/api/esp32/devices/${deviceId}/stats`, {
         params: { hoursBack },
       });
       return response.data;
@@ -184,8 +254,8 @@ export const api = {
     /**
      * Health check
      */
-    health: async () => {
-      const response = await apiClient.get('/api/esp32/health');
+    health: async (): Promise<{ status: string; timestamp: string }> => {
+      const response = await apiClient.get<{ status: string; timestamp: string }>('/api/esp32/health');
       return response.data;
     },
   },
