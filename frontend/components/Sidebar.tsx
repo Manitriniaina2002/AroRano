@@ -47,7 +47,7 @@ export function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
       {mobileOpen && <div className="fixed inset-0 z-30 bg-black/50 md:hidden" onClick={() => setMobileOpen(false)} />}
 
       <aside
-        className={`fixed left-0 top-0 z-40 flex h-screen flex-col border-r border-white/10 bg-slate-950/90 text-white shadow-2xl backdrop-blur-xl transition-all duration-300 md:static ${
+        className={`fixed left-0 top-14 bottom-0 z-40 flex flex-col border-r border-white/10 bg-slate-950/90 text-white shadow-2xl backdrop-blur-xl transition-all duration-300 md:static md:h-auto ${
           collapsed ? 'w-20' : 'w-72'
         } ${mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}
       >
