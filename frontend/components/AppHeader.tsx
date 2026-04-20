@@ -44,7 +44,7 @@ export default function AppHeader({ title: _title = 'AroRano' }: AppHeaderProps)
   const currentLangLabel = availableLanguages.find((l) => l.code === contextLanguage)?.nativeName || contextLanguage.toUpperCase();
 
   return (
-    <header className="w-full fixed top-0 left-0 right-0 bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-600 text-white shadow-md z-50 flex-shrink-0 relative">
+    <header className="fixed left-0 right-0 top-0 z-50 w-full flex-shrink-0 bg-gradient-to-r from-cyan-700 via-cyan-600 to-teal-600 text-white shadow-md">
       <div className="w-full max-w-full mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-2 sm:py-3 flex justify-between items-center min-h-12 sm:min-h-14 relative z-10 gap-2 sm:gap-4">
         <div className="flex items-center gap-2 flex-shrink-0">
           <Image
@@ -141,7 +141,7 @@ export default function AppHeader({ title: _title = 'AroRano' }: AppHeaderProps)
                       onClick={() => handleLanguageChange(lang.code as 'en' | 'mg' | 'tdx')}
                       className={`block w-full text-left px-3 sm:px-4 py-2 sm:py-3 transition-colors duration-200 text-sm ${
                         contextLanguage === lang.code
-                          ? 'bg-blue-100 text-blue-600 font-semibold'
+                          ? 'bg-cyan-100 text-cyan-700 font-semibold'
                           : 'text-gray-700 hover:bg-gray-50'
                       }`}
                     >

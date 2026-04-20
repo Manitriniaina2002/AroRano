@@ -9,7 +9,7 @@ import { AuthProvider } from '@/lib/AuthContext';
 // Dynamically import AppHeader as a client component to prevent SSG issues
 const AppHeader = dynamic(() => import('@/components/AppHeader'), {
   ssr: false,
-  loading: () => <div className="h-16 bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-600" />,
+  loading: () => <div className="h-16 bg-gradient-to-r from-cyan-700 via-cyan-600 to-teal-600" />,
 });
 
 export default function App({ Component, pageProps }: AppProps) {

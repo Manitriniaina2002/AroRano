@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { toast } from 'sonner';
 import { Layout } from '@/components/Layout';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -74,7 +75,7 @@ export default function DashboardPage() {
 
   const [deviceIds, setDeviceIds] = useState<string[]>([]);
   const [snapshots, setSnapshots] = useState<DeviceSnapshot[]>([]);
-  const [selectedDeviceId, setSelectedDeviceId] = useState<string>('reservoir_01');
+  const [selectedDeviceId, setSelectedDeviceId] = useState<string>('');
   const [selectedLatest, setSelectedLatest] = useState<ESP32Reading | null>(null);
   const [selectedStats, setSelectedStats] = useState<ESP32Stats | null>(null);
   const [selectedHistory, setSelectedHistory] = useState<ESP32Reading[]>([]);
@@ -115,8 +116,17 @@ export default function DashboardPage() {
 
     try {
       const { devices } = await api.esp32.getDevices();
-      const nextDeviceIds = devices.length > 0 ? devices : ['reservoir_01'];
+      const nextDeviceIds = devices;
       setDeviceIds(nextDeviceIds);
+
+      if (nextDeviceIds.length === 0) {
+        setSnapshots([]);
+        setSelectedDeviceId('');
+        setSelectedLatest(null);
+        setSelectedStats(null);
+        setSelectedHistory([]);
+        return;
+      }
 
       const nextSnapshots = await Promise.all(
         nextDeviceIds.map(async (deviceId) => {
@@ -155,6 +165,8 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
+    if (!selectedDeviceId) return;
+
     websocket.subscribeToDevice(selectedDeviceId);
 
     const handleSensorReading = (event: { deviceId: string }) => {
@@ -222,7 +234,8 @@ export default function DashboardPage() {
   ];
 
   return (
-    <Layout>
+    <ProtectedRoute>
+      <Layout>
       <main className="relative min-h-screen overflow-hidden px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
         <div className="mx-auto max-w-7xl space-y-5 sm:space-y-6 md:space-y-8">
           <section className="grid gap-4 lg:grid-cols-[1.5fr_0.9fr]">
@@ -251,11 +264,11 @@ export default function DashboardPage() {
                   </Badge>
                   <Badge variant={alertBadgeVariant(latestReading?.alert)} className="border-white/10 bg-white/10 text-white">
                     <FiAlertCircle className="mr-1 h-3.5 w-3.5" />
-                    {latestReading?.alert ?? 'NO DATA'}
+                    {latestReading?.alert ?? 'NO_DATA'}
                   </Badge>
                   <Badge variant="default" className="border-white/10 bg-white/10 text-white">
                     <FiMapPin className="mr-1 h-3.5 w-3.5" />
-                    {selectedDeviceId}
+                    {selectedDeviceId || 'No device selected'}
                   </Badge>
                 </div>
 
@@ -292,7 +305,7 @@ export default function DashboardPage() {
                       variant="outline"
                       size="sm"
                       onClick={() => loadSelectedDevice(selectedDeviceId, true)}
-                      disabled={loading || refreshing}
+                      disabled={loading || refreshing || !selectedDeviceId}
                       className="gap-2"
                     >
                       <FiRefreshCw className={refreshing ? 'h-4 w-4 animate-spin' : 'h-4 w-4'} />
@@ -344,7 +357,7 @@ export default function DashboardPage() {
                   <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Selected device</p>
                   <div className="mt-3 flex items-center justify-between gap-3">
                     <div>
-                      <h2 className="text-lg font-semibold text-slate-900">{selectedDeviceId}</h2>
+                      <h2 className="text-lg font-semibold text-slate-900">{selectedDeviceId || 'No device selected'}</h2>
                       <p className="mt-1 text-sm text-slate-600">Updated {formatTime(latestReading?.timestamp ?? selectedHistory[0]?.timestamp)}</p>
                     </div>
                     <FiDroplet className="h-9 w-9 text-cyan-500" />
@@ -452,7 +465,7 @@ export default function DashboardPage() {
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Live details</p>
-                    <CardTitle className="mt-1 text-xl text-slate-900">{selectedDeviceId}</CardTitle>
+                    <CardTitle className="mt-1 text-xl text-slate-900">{selectedDeviceId || 'No device selected'}</CardTitle>
                   </div>
                   <Badge variant={alertBadgeVariant(latestReading?.alert)}>{latestReading?.alert ?? 'NO DATA'}</Badge>
                 </div>
@@ -541,6 +554,7 @@ export default function DashboardPage() {
           </section>
         </div>
       </main>
-    </Layout>
+      </Layout>
+    </ProtectedRoute>
   );
 }

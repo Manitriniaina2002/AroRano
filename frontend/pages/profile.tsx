@@ -38,7 +38,7 @@ export default function ProfilePage() {
       <Layout>
         <main className="flex items-center justify-center min-h-screen">
           <div className="text-center">
-            <FiLoader className="w-12 h-12 animate-spin mx-auto text-blue-600 mb-4" />
+            <FiLoader className="w-12 h-12 animate-spin mx-auto text-cyan-600 mb-4" />
             <p className="text-gray-600">{t.common.loading || 'Loading...'}</p>
           </div>
         </main>
@@ -61,12 +61,12 @@ export default function ProfilePage() {
           </div>
 
           {/* User Info Card */}
-          <Card className="mb-6 border-2 border-blue-100">
+          <Card className="mb-6 border-2 border-cyan-100">
             <CardHeader className="pb-3 sm:pb-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <FiUser size={24} className="text-blue-600" />
+                  <div className="w-12 h-12 bg-cyan-100 rounded-lg flex items-center justify-center">
+                    <FiUser size={24} className="text-cyan-600" />
                   </div>
                   <div>
                     <CardTitle className="text-lg sm:text-xl">
@@ -104,8 +104,8 @@ export default function ProfilePage() {
             <Card>
               <CardContent className="pt-6">
                 <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <FiShield size={20} className="text-purple-600" />
+                  <div className="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <FiShield size={20} className="text-teal-600" />
                   </div>
                   <div className="flex-1">
                     <p className="text-xs sm:text-sm font-semibold text-gray-600 mb-1">

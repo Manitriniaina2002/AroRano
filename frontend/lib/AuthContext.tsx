@@ -1,6 +1,9 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { getApiOrigin } from './runtime-config';
+
+const API_ORIGIN = getApiOrigin();
 
 export interface AuthUser {
   id: string;
@@ -41,7 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const checkTokenValidity = async (authToken: string) => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/profile`, {
+      const response = await fetch(`${API_ORIGIN}/auth/profile`, {
         headers: {
           Authorization: `Bearer ${authToken}`,
         },
@@ -64,7 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
+      const response = await fetch(`${API_ORIGIN}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -86,7 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = async (email: string, password: string, firstName?: string, lastName?: string) => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/register`, {
+      const response = await fetch(`${API_ORIGIN}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password, firstName, lastName }),
@@ -116,7 +119,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!token) return null;
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/profile`, {
+      const response = await fetch(`${API_ORIGIN}/auth/profile`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

@@ -46,7 +46,7 @@ export default function LoginPage() {
   };
 
   return (
-    <Layout>
+    <Layout showSidebar={false}>
       <main className="min-h-screen flex items-center justify-center px-2 sm:px-4 md:px-6 py-8 sm:py-12">
         <div className="w-full max-w-md">
           {/* Logo & Title */}
@@ -60,7 +60,7 @@ export default function LoginPage() {
           </div>
 
           {/* Login Form Card */}
-          <Card className="border-2 border-blue-100">
+          <Card className="border-2 border-cyan-100">
             <CardHeader className="pb-3 sm:pb-4">
               <CardTitle className="text-lg sm:text-xl">{t.common.login || 'Login'}</CardTitle>
               <CardDescription className="text-xs sm:text-sm">
@@ -118,7 +118,7 @@ export default function LoginPage() {
                 <Button
                   type="submit"
                   disabled={loading || !email || !password}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 sm:py-2.5 text-sm sm:text-base flex items-center justify-center gap-2"
+                  className="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-semibold py-2 sm:py-2.5 text-sm sm:text-base flex items-center justify-center gap-2"
                 >
                   {loading ? (
                     <>
@@ -146,20 +146,13 @@ export default function LoginPage() {
                 {t.common.noAccount || "Don't have an account?"}{' '}
                 <Link
                   href="/register"
-                  className="text-blue-600 hover:text-blue-700 font-semibold transition-colors"
+                  className="text-cyan-600 hover:text-cyan-700 font-semibold transition-colors"
                 >
                   {t.common.signUp || 'Sign up'}
                 </Link>
               </p>
             </CardContent>
           </Card>
-
-          {/* Demo Credentials */}
-          <div className="mt-6 sm:mt-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <p className="text-xs sm:text-sm text-blue-900 font-semibold mb-2">Demo Credentials:</p>
-            <p className="text-xs text-blue-800">Email: demo@example.com</p>
-            <p className="text-xs text-blue-800">Password: demo123456</p>
-          </div>
         </div>
       </main>
     </Layout>
