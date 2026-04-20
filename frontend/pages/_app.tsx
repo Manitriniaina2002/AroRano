@@ -18,7 +18,7 @@ export default function App({ Component, pageProps }: AppProps) {
       <AuthProvider>
         <div className="flex flex-col h-screen bg-slate-50">
           <AppHeader />
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-1 overflow-y-auto">
             <Component {...pageProps} />
           </div>
         </div>
