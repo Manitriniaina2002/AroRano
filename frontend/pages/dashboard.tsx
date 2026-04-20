@@ -236,7 +236,7 @@ export default function DashboardPage() {
   return (
     <ProtectedRoute>
       <Layout>
-      <main className="relative min-h-screen overflow-hidden px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
+      <main className="relative min-h-screen overflow-x-hidden px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
         <div className="mx-auto max-w-7xl space-y-5 sm:space-y-6 md:space-y-8">
           <section className="grid gap-4 lg:grid-cols-[1.5fr_0.9fr]">
             <Card className="relative overflow-hidden border-0 bg-slate-950 text-white shadow-2xl">
