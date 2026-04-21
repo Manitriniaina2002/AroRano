@@ -48,7 +48,7 @@ function isOriginAllowed(origin: string, allowedOrigins: string[]): boolean {
 }
 
 function createCorsOriginValidator(allowedOrigins: string[]) {
-  return (origin: string | undefined, callback: (error: Error | null, allow?: boolean) => void) => {
+  return (origin: string | undefined, callback: (error: Error | null, allow?: boolean | string) => void) => {
     // Allow non-browser clients that do not send an Origin header.
     if (!origin) {
       callback(null, true);
@@ -56,7 +56,7 @@ function createCorsOriginValidator(allowedOrigins: string[]) {
     }
 
     if (isOriginAllowed(origin, allowedOrigins)) {
-      callback(null, true);
+      callback(null, origin);
       return;
     }
 
