@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ESP32Reading } from './esp32-reading.entity';
+import { ESP32Command } from './esp32-command.entity';
 import { CreateESP32ReadingDto, ESP32StatsDto } from './esp32.dto';
 import { EventsGateway } from '../events/events.gateway';
 
@@ -12,6 +13,8 @@ export class ESP32Service {
   constructor(
     @InjectRepository(ESP32Reading)
     private esp32Repository: Repository<ESP32Reading>,
+    @InjectRepository(ESP32Command)
+    private esp32CommandRepository: Repository<ESP32Command>,
     private eventsGateway: EventsGateway,
   ) {}
 
@@ -171,6 +174,88 @@ export class ESP32Service {
       .getRawMany();
 
     return result.map((r) => r.deviceId);
+  }
+
+  /**
+   * Create a reservoir fill command for a device
+   */
+  async requestFillReservoir(
+    deviceId: string,
+    requestedBy?: string,
+    durationSeconds?: number,
+    notes?: string,
+  ): Promise<ESP32Command> {
+    const latestReading = await this.getLatestReading(deviceId);
+
+    if (!latestReading) {
+      throw new Error(`Device ${deviceId} has no readings yet and cannot receive commands`);
+    }
+
+    const command = this.esp32CommandRepository.create({
+      deviceId,
+      commandType: 'FILL_RESERVOIR',
+      status: 'pending',
+      parameters: {
+        action: 'fill_reservoir',
+        targetPumpStatus: 'ON',
+        durationSeconds: durationSeconds ?? null,
+      },
+      notes: notes ?? null,
+      acknowledgedAt: null,
+      executedAt: null,
+      errorMessage: null,
+      requestedBy: requestedBy ?? null,
+    });
+
+    const savedCommand = await this.esp32CommandRepository.save(command);
+    this.eventsGateway.broadcastESP32Command(deviceId, savedCommand);
+    return savedCommand;
+  }
+
+  async getLatestCommand(deviceId: string): Promise<ESP32Command | null> {
+    return this.esp32CommandRepository.findOne({
+      where: { deviceId },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async getDeviceCommands(deviceId: string, limit = 20, offset = 0): Promise<{ data: ESP32Command[]; total: number }> {
+    const [data, total] = await this.esp32CommandRepository.findAndCount({
+      where: { deviceId },
+      order: { createdAt: 'DESC' },
+      take: limit,
+      skip: offset,
+    });
+
+    return { data, total };
+  }
+
+  async acknowledgeCommand(
+    deviceId: string,
+    commandId: string,
+    status: 'acknowledged' | 'executed' | 'failed' = 'acknowledged',
+    errorMessage?: string,
+  ): Promise<ESP32Command> {
+    const command = await this.esp32CommandRepository.findOne({ where: { id: commandId, deviceId } });
+
+    if (!command) {
+      throw new Error(`Command ${commandId} not found for device ${deviceId}`);
+    }
+
+    command.status = status;
+    if (status === 'acknowledged') {
+      command.acknowledgedAt = new Date();
+    }
+    if (status === 'executed') {
+      command.executedAt = new Date();
+    }
+    if (status === 'failed') {
+      command.errorMessage = errorMessage ?? 'Command execution failed';
+    }
+
+    const saved = await this.esp32CommandRepository.save(command);
+    this.eventsGateway.broadcastESP32Command(deviceId, saved);
+    return saved;
   }
 
   /**

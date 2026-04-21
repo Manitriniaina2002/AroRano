@@ -8,10 +8,11 @@ import {
   HttpCode,
   HttpStatus,
   BadRequestException,
+  Patch,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiOkResponse, ApiBadRequestResponse } from '@nestjs/swagger';
 import { ESP32Service } from './esp32.service';
-import { CreateESP32ReadingDto, ESP32ReadingResponseDto, ESP32StatsDto } from './esp32.dto';
+import { CreateESP32ReadingDto, CreateESP32CommandDto, ESP32CommandResponseDto, ESP32ReadingResponseDto, ESP32StatsDto } from './esp32.dto';
 import { ESP32Reading } from './esp32-reading.entity';
 
 @ApiTags('esp32')
@@ -144,6 +145,68 @@ export class ESP32Controller {
   }
 
   /**
+   * Send a fill reservoir command to a device
+   * POST /api/esp32/devices/:deviceId/fill
+   */
+  @Post('devices/:deviceId/fill')
+  @ApiOperation({ summary: 'Send fill reservoir command to device' })
+  @ApiOkResponse({ type: ESP32CommandResponseDto })
+  async fillReservoir(
+    @Param('deviceId') deviceId: string,
+    @Body() dto: CreateESP32CommandDto,
+  ) {
+    return await this.esp32Service.requestFillReservoir(deviceId, dto.requestedBy, dto.durationSeconds, dto.notes);
+  }
+
+  /**
+   * Get latest command for a device
+   * GET /api/esp32/devices/:deviceId/commands/latest
+   */
+  @Get('devices/:deviceId/commands/latest')
+  @ApiOperation({ summary: 'Get latest command for device' })
+  @ApiOkResponse({ type: ESP32CommandResponseDto })
+  async getLatestCommand(@Param('deviceId') deviceId: string) {
+    return await this.esp32Service.getLatestCommand(deviceId);
+  }
+
+  /**
+   * Get commands for a device
+   * GET /api/esp32/devices/:deviceId/commands
+   */
+  @Get('devices/:deviceId/commands')
+  @ApiOperation({ summary: 'Get command history for device' })
+  @ApiOkResponse({ type: [ESP32CommandResponseDto] })
+  async getCommands(
+    @Param('deviceId') deviceId: string,
+    @Query('limit') limit: string = '20',
+    @Query('offset') offset: string = '0',
+  ) {
+    const limitNum = Math.min(parseInt(limit) || 20, 100);
+    const offsetNum = parseInt(offset) || 0;
+
+    if (limitNum < 1 || offsetNum < 0) {
+      throw new BadRequestException('limit must be >= 1 and offset must be >= 0');
+    }
+
+    return await this.esp32Service.getDeviceCommands(deviceId, limitNum, offsetNum);
+  }
+
+  /**
+   * Acknowledge an ESP32 command
+   * PATCH /api/esp32/devices/:deviceId/commands/:commandId
+   */
+  @Patch('devices/:deviceId/commands/:commandId')
+  @ApiOperation({ summary: 'Acknowledge or complete a command' })
+  @ApiOkResponse({ type: ESP32CommandResponseDto })
+  async acknowledgeCommand(
+    @Param('deviceId') deviceId: string,
+    @Param('commandId') commandId: string,
+    @Body() body: { status?: 'acknowledged' | 'executed' | 'failed'; errorMessage?: string },
+  ) {
+    return await this.esp32Service.acknowledgeCommand(deviceId, commandId, body.status ?? 'acknowledged', body.errorMessage);
+  }
+
+  /**
    * Get all devices that have sent data
    * GET /api/esp32/devices
    */
@@ -185,6 +248,10 @@ export class ESP32Controller {
         getReadings: 'GET /api/esp32/devices/:deviceId/readings',
         getReadingsByRange: 'GET /api/esp32/devices/:deviceId/readings/range',
         getStats: 'GET /api/esp32/devices/:deviceId/stats',
+        fillReservoir: 'POST /api/esp32/devices/:deviceId/fill',
+        getLatestCommand: 'GET /api/esp32/devices/:deviceId/commands/latest',
+        getCommands: 'GET /api/esp32/devices/:deviceId/commands',
+        acknowledgeCommand: 'PATCH /api/esp32/devices/:deviceId/commands/:commandId',
       },
       timestamp: new Date(),
     };

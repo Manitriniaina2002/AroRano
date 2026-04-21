@@ -22,6 +22,7 @@ import {
   FiMapPin,
   FiRefreshCw,
   FiShield,
+  FiTool,
   FiThermometer,
   FiTrendingUp,
   FiUsers,
@@ -35,6 +36,21 @@ interface DeviceSnapshot {
   deviceId: string;
   latest: ESP32Reading | null;
   stats: ESP32Stats | null;
+}
+
+interface DeviceCommandSnapshot {
+  id: string;
+  deviceId: string;
+  commandType: string;
+  status: string;
+  parameters: Record<string, any> | null;
+  notes: string | null;
+  acknowledgedAt: string | null;
+  executedAt: string | null;
+  errorMessage: string | null;
+  requestedBy: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 function formatTime(value?: string | Date | null) {
@@ -77,6 +93,23 @@ function reservoirState(percent: number) {
   return { levelKey: 'low', tone: 'text-amber-700', chip: 'bg-amber-100 text-amber-800' };
 }
 
+function commandStatusLabel(status: string, t: any) {
+  const normalized = status.toLowerCase();
+  if (normalized === 'pending') return t.dashboard.commandPending;
+  if (normalized === 'acknowledged') return t.dashboard.commandAcknowledged;
+  if (normalized === 'executed') return t.dashboard.commandExecuted;
+  if (normalized === 'failed') return t.dashboard.commandFailedStatus;
+  return status;
+}
+
+function commandBadgeVariant(status: string): 'success' | 'warning' | 'destructive' | 'default' {
+  const normalized = status.toLowerCase();
+  if (normalized === 'executed') return 'success';
+  if (normalized === 'acknowledged' || normalized === 'pending') return 'warning';
+  if (normalized === 'failed') return 'destructive';
+  return 'default';
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const { user } = useAuth();
@@ -94,8 +127,10 @@ export default function DashboardPage() {
   const [selectedLatest, setSelectedLatest] = useState<ESP32Reading | null>(null);
   const [selectedStats, setSelectedStats] = useState<ESP32Stats | null>(null);
   const [selectedHistory, setSelectedHistory] = useState<ESP32Reading[]>([]);
+  const [selectedCommand, setSelectedCommand] = useState<DeviceCommandSnapshot | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [sendingFillCommand, setSendingFillCommand] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const loadSelectedDevice = async (deviceId: string, showSpinner = false) => {
@@ -104,16 +139,18 @@ export default function DashboardPage() {
     }
 
     try {
-      const [latest, stats, history] = await Promise.all([
+      const [latest, stats, history, latestCommand] = await Promise.all([
         api.esp32.getLatestReading(deviceId),
         api.esp32.getStats(deviceId).catch(() => null),
         api.esp32.getReadings(deviceId, 12, 0).catch(() => ({ data: [] as ESP32Reading[], total: 0 })),
+        api.esp32.getLatestCommand(deviceId).catch(() => null),
       ]);
 
       setSelectedDeviceId(deviceId);
       setSelectedLatest(latest ?? null);
       setSelectedStats(stats);
       setSelectedHistory(history.data);
+      setSelectedCommand(latestCommand ?? null);
     } catch (fetchError) {
       const message = fetchError instanceof Error ? fetchError.message : t.dashboard.unableToLoadDeviceData;
       setError(message);
@@ -140,6 +177,7 @@ export default function DashboardPage() {
         setSelectedLatest(null);
         setSelectedStats(null);
         setSelectedHistory([]);
+        setSelectedCommand(null);
         return;
       }
 
@@ -190,11 +228,20 @@ export default function DashboardPage() {
       }
     };
 
+    const handleCommand = (event: { deviceId: string; command: DeviceCommandSnapshot }) => {
+      if (event.deviceId === selectedDeviceId) {
+        setSelectedCommand(event.command);
+        toast.info(`${t.dashboard.latestCommand}: ${commandStatusLabel(event.command.status, t)}`);
+      }
+    };
+
     websocket.onSensorReading(handleSensorReading);
+    websocket.onESP32Command(handleCommand);
 
     return () => {
       websocket.unsubscribeFromDevice(selectedDeviceId);
       websocket.off('sensorReading');
+      websocket.off('esp32Command');
     };
   }, [selectedDeviceId]);
 
@@ -249,6 +296,27 @@ export default function DashboardPage() {
       background: 'bg-violet-50',
     },
   ];
+
+  const handleFillReservoir = async () => {
+    if (!selectedDeviceId) return;
+
+    try {
+      setSendingFillCommand(true);
+      const command = await api.esp32.fillReservoir(selectedDeviceId, {
+        durationSeconds: 60,
+        notes: t.dashboard.fillReservoir,
+        requestedBy: user?.email ?? undefined,
+      });
+      setSelectedCommand(command);
+      toast.success(t.dashboard.commandSent);
+      await loadSelectedDevice(selectedDeviceId, true);
+    } catch (fillError) {
+      const message = fillError instanceof Error ? fillError.message : t.dashboard.commandFailed;
+      toast.error(message);
+    } finally {
+      setSendingFillCommand(false);
+    }
+  };
 
   return (
     <ProtectedRoute>
@@ -306,6 +374,43 @@ export default function DashboardPage() {
                     );
                   })}
                 </div>
+
+                <div className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+                  <div className="grid gap-6 sm:grid-cols-[1fr_auto] sm:items-center">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <p className="text-xs font-medium uppercase tracking-[0.18em] text-cyan-200">{t.dashboard.reservoirLevel}</p>
+                        <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${levelState.chip}`}>{stateLabels[levelState.levelKey]}</span>
+                      </div>
+                      <p className="mt-2 text-5xl font-semibold text-white">{Math.round(clampedLatestPercent)}%</p>
+                      <div className="mt-3 text-sm text-slate-300">
+                        <p>{selectedLatest?.waterLevelCm?.toFixed(1) ?? latestReading?.waterLevelCm?.toFixed(1) ?? 'n/a'} cm</p>
+                        <p>{latestReading?.rainDetected ? t.dashboard.rainDetected : t.dashboard.dryConditions}</p>
+                      </div>
+
+                      <div className="mt-4 h-3 overflow-hidden rounded-full bg-white/20">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-400 transition-all duration-500"
+                          style={{ width: `${clampedLatestPercent}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="mx-auto sm:mx-0">
+                      <div className="relative h-48 w-28 overflow-hidden rounded-t-[2.2rem] rounded-b-2xl border-4 border-white/30 bg-white/10 shadow-inner">
+                        <div
+                          className="absolute bottom-0 left-0 right-0 overflow-hidden bg-gradient-to-t from-cyan-400 via-cyan-400 to-blue-300 transition-all duration-700"
+                          style={{ height: `${Math.max(clampedLatestPercent, 6)}%` }}
+                        >
+                          <div className="reservoir-wave reservoir-wave-1 absolute -left-4 right-[-20%] top-[-8px] h-5 bg-white/45" />
+                          <div className="reservoir-wave reservoir-wave-2 absolute -left-6 right-[-18%] top-[-10px] h-6 bg-white/35" />
+                        </div>
+                        <div className="absolute inset-y-2 left-2 w-[2px] rounded bg-white/40" />
+                      </div>
+                      <p className={`mt-2 text-center text-xs font-semibold uppercase tracking-[0.14em] text-cyan-200`}>{t.dashboard.waterReservoir}</p>
+                    </div>
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
@@ -348,6 +453,30 @@ export default function DashboardPage() {
                     </div>
                   </div>
 
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <Button
+                        onClick={handleFillReservoir}
+                        disabled={!selectedDeviceId || loading || refreshing || sendingFillCommand}
+                        className="h-11 rounded-2xl gap-2"
+                      >
+                        <FiTool className={sendingFillCommand ? 'h-4 w-4 animate-pulse' : 'h-4 w-4'} />
+                        {sendingFillCommand ? t.dashboard.fillingReservoir : t.dashboard.fillReservoir}
+                      </Button>
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                        <p className="text-xs font-medium text-slate-500">{t.dashboard.latestCommand}</p>
+                        <div className="mt-2 flex items-center gap-2">
+                          <Badge variant={commandBadgeVariant(selectedCommand?.status ?? 'default')}>
+                            {selectedCommand ? commandStatusLabel(selectedCommand.status, t) : t.dashboard.commandNoData}
+                          </Badge>
+                          {selectedCommand?.parameters?.durationSeconds ? (
+                            <span className="text-xs text-slate-500">
+                              {t.dashboard.commandDuration}: {selectedCommand.parameters.durationSeconds}s
+                            </span>
+                          ) : null}
+                        </div>
+                      </div>
+                    </div>
+
                   {user?.role === 'admin' && (
                     <button
                       onClick={() => router.push('/users')}
@@ -379,39 +508,22 @@ export default function DashboardPage() {
                     <FiDroplet className="h-9 w-9 text-cyan-500" />
                   </div>
 
-                  <div className="mt-4 rounded-3xl border border-slate-200 bg-gradient-to-b from-cyan-50 to-blue-100 p-4">
-                    <div className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-end">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <p className="text-xs font-medium uppercase tracking-[0.18em] text-cyan-700">{t.dashboard.reservoirLevel}</p>
-                          <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${levelState.chip}`}>{stateLabels[levelState.levelKey]}</span>
-                        </div>
-                        <p className="mt-1 text-4xl font-semibold text-slate-900">{Math.round(clampedLatestPercent)}%</p>
-                        <div className="mt-2 text-sm text-slate-600">
-                          <p>{selectedLatest?.waterLevelCm?.toFixed(1) ?? latestReading?.waterLevelCm?.toFixed(1) ?? 'n/a'} cm</p>
-                          <p>{latestReading?.rainDetected ? t.dashboard.rainDetected : t.dashboard.dryConditions}</p>
-                        </div>
-
-                        <div className="mt-4 h-3 overflow-hidden rounded-full bg-white/70">
-                          <div
-                            className="h-full rounded-full bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-500 transition-all duration-500"
-                            style={{ width: `${clampedLatestPercent}%` }}
-                          />
-                        </div>
-                      </div>
-
-                      <div className="mx-auto sm:mx-0">
-                        <div className="relative h-48 w-28 overflow-hidden rounded-t-[2.2rem] rounded-b-2xl border-4 border-slate-200 bg-white/80 shadow-inner">
-                          <div
-                            className="absolute bottom-0 left-0 right-0 overflow-hidden bg-gradient-to-t from-cyan-600 via-cyan-500 to-blue-400 transition-all duration-700"
-                            style={{ height: `${Math.max(clampedLatestPercent, 6)}%` }}
-                          >
-                            <div className="reservoir-wave reservoir-wave-1 absolute -left-4 right-[-20%] top-[-8px] h-5 bg-white/45" />
-                            <div className="reservoir-wave reservoir-wave-2 absolute -left-6 right-[-18%] top-[-10px] h-6 bg-cyan-200/55" />
-                          </div>
-                          <div className="absolute inset-y-2 left-2 w-[2px] rounded bg-slate-300/70" />
-                        </div>
-                        <p className={`mt-2 text-center text-xs font-semibold uppercase tracking-[0.14em] ${levelState.tone}`}>{t.dashboard.waterReservoir}</p>
+                  <div className="mt-4 space-y-3">
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                      <p className="text-xs font-medium text-slate-500">{t.dashboard.currentState}</p>
+                      <p className="mt-2 text-2xl font-semibold text-slate-900">{pumpStatus}</p>
+                    </div>
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                      <p className="text-xs font-medium text-slate-500">{t.dashboard.latestCommand}</p>
+                      <div className="mt-2 flex items-center gap-2">
+                        <Badge variant={commandBadgeVariant(selectedCommand?.status ?? 'default')}>
+                          {selectedCommand ? commandStatusLabel(selectedCommand.status, t) : t.dashboard.commandNoData}
+                        </Badge>
+                        {selectedCommand?.parameters?.durationSeconds ? (
+                          <span className="text-xs text-slate-500">
+                            {t.dashboard.commandDuration}: {selectedCommand.parameters.durationSeconds}s
+                          </span>
+                        ) : null}
                       </div>
                     </div>
                   </div>

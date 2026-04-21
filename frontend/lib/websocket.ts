@@ -33,6 +33,25 @@ export interface DeviceDeletedEvent {
   timestamp: string;
 }
 
+export interface ESP32CommandEvent {
+  deviceId: string;
+  command: {
+    id: string;
+    deviceId: string;
+    commandType: string;
+    status: string;
+    parameters: Record<string, any> | null;
+    notes: string | null;
+    acknowledgedAt: string | null;
+    executedAt: string | null;
+    errorMessage: string | null;
+    requestedBy: string | null;
+    createdAt: string;
+    updatedAt: string;
+  };
+  timestamp: string;
+}
+
 type EventCallback<T> = (data: T) => void;
 
 export const websocket = {
@@ -139,6 +158,15 @@ export const websocket = {
   onDeviceDeleted: (callback: EventCallback<DeviceDeletedEvent>): void => {
     if (socket) {
       socket.on('deviceDeleted', callback);
+    }
+  },
+
+  /**
+   * Listen for ESP32 commands in real-time
+   */
+  onESP32Command: (callback: EventCallback<ESP32CommandEvent>): void => {
+    if (socket) {
+      socket.on('esp32Command', callback);
     }
   },
 

@@ -191,4 +191,31 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     
     this.logger.warn(`Broadcasted alert for device ${deviceId}: ${alert}`);
   }
+
+  /**
+   * Broadcast a command issued for an ESP32 device
+   */
+  broadcastESP32Command(deviceId: string, command: any): void {
+    if (!this.server) {
+      this.logger.debug(`WebSocket server not initialized, skipping ESP32Command broadcast`);
+      return;
+    }
+
+    const payload = {
+      deviceId,
+      command,
+      timestamp: new Date(),
+    };
+
+    const clients = this.deviceConnections.get(deviceId);
+
+    if (clients && clients.size > 0) {
+      clients.forEach((clientId) => {
+        this.server.to(clientId).emit('esp32Command', payload);
+      });
+    }
+
+    this.server.emit('esp32CommandGlobal', payload);
+    this.logger.log(`Broadcasted ESP32 command for device ${deviceId}`);
+  }
 }

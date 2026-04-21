@@ -124,3 +124,61 @@ export class ESP32StatsDto {
   @ApiProperty({ description: 'Latest pump status' })
   latestPumpStatus: string;
 }
+
+export class CreateESP32CommandDto {
+  @ApiProperty({ example: 60, description: 'Optional pump runtime in seconds', required: false })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(1)
+  @Max(3600)
+  durationSeconds?: number;
+
+  @ApiProperty({ example: 'Fill the reservoir to target level', required: false })
+  @IsOptional()
+  @IsString()
+  notes?: string;
+
+  @ApiProperty({ example: 'admin@arorano.local', required: false })
+  @IsOptional()
+  @IsString()
+  requestedBy?: string;
+}
+
+export class ESP32CommandResponseDto {
+  @ApiProperty()
+  id: string;
+
+  @ApiProperty()
+  deviceId: string;
+
+  @ApiProperty()
+  commandType: string;
+
+  @ApiProperty()
+  status: string;
+
+  @ApiProperty({ required: false })
+  parameters: Record<string, any> | null;
+
+  @ApiProperty({ required: false })
+  notes: string | null;
+
+  @ApiProperty({ required: false })
+  acknowledgedAt: Date | null;
+
+  @ApiProperty({ required: false })
+  executedAt: Date | null;
+
+  @ApiProperty({ required: false })
+  errorMessage: string | null;
+
+  @ApiProperty({ required: false })
+  requestedBy: string | null;
+
+  @ApiProperty()
+  createdAt: Date;
+
+  @ApiProperty()
+  updatedAt: Date;
+}

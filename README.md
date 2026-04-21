@@ -9,6 +9,8 @@ A modern **full-stack IoT application** built with **Next.js** (frontend) and **
 - ✅ Device Monitoring Dashboard
 - ✅ Real-time Device Statistics
 - ✅ **WebSocket Real-Time Data Streaming** 🚀
+- ✅ **Malagasy dataset scraping and export**
+- ✅ **Reservoir fill command from the dashboard**
 - ✅ PostgreSQL Database Integration
 - ✅ TypeORM ORM Support
 - ✅ RESTful API with Swagger Documentation
@@ -160,6 +162,16 @@ docker-compose -f docker-compose.dev.yml up
 - Swagger Docs: http://localhost:3001/api/docs
 - PostgreSQL: localhost:5432
 
+### Reservoir Fill Command
+
+Use the dashboard to send a fill command to a reservoir device.
+
+- `POST /api/esp32/devices/:deviceId/fill` - queue a fill reservoir command
+- `GET /api/esp32/devices/:deviceId/commands/latest` - read the latest command
+- `GET /api/esp32/devices/:deviceId/commands` - list command history
+
+The command is broadcast over Socket.IO as `esp32Command`, so the dashboard can update immediately.
+
 ### Docker Commands
 
 ```bash
@@ -235,6 +247,18 @@ http://192.168.88.16:3001/api/esp32/data
 ```
 
 The ESP32 and this computer must be on the same Wi-Fi network, and Windows Firewall must allow inbound TCP traffic on port `3001`.
+
+## Scraper Module
+
+The backend also includes a dataset scraping module for building Malagasy translation corpora.
+
+- `POST /api/scraper/jobs` - create and start a scraping job
+- `GET /api/scraper/jobs` - list scraping jobs
+- `GET /api/scraper/entries` - view dataset entries
+- `POST /api/scraper/entries` - add a manual translation example
+- `GET /api/scraper/export?format=json|csv|jsonl` - export the dataset
+
+The frontend scraper workspace is available at `http://localhost:3000/scraper`.
 
 ## 📡 API Endpoints
 

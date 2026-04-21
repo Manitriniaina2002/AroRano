@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { FiChevronLeft, FiChevronRight, FiHome, FiShield, FiUser, FiUsers, FiActivity, FiX } from 'react-icons/fi';
+import { FiChevronLeft, FiChevronRight, FiGlobe, FiHome, FiShield, FiUser, FiUsers, FiActivity, FiX } from 'react-icons/fi';
 import { t } from '@/lib/i18n';
 import { useLanguage } from '@/lib/LanguageContext';
 import { useAuth } from '@/lib/AuthContext';
@@ -36,6 +36,7 @@ export function Sidebar({ isOpen = true, onToggle }: SidebarProps) {
   const navItems: NavItem[] = [
     { key: 'home', href: '/', icon: FiHome },
     { key: 'dashboard', href: '/dashboard', icon: FiActivity },
+    { key: 'scraper', href: '/scraper', icon: FiGlobe },
     { key: 'profile', href: '/profile', icon: FiUser },
     { key: 'users', href: '/users', icon: FiUsers, adminOnly: true },
   ];
