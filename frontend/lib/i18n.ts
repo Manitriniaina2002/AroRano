@@ -196,6 +196,10 @@ export const translations: Record<Language, any> = {
     home: {
       title: 'AroRano',
       subtitle: 'Smart Water Monitoring Platform',
+      landingTitle: 'Water monitoring, simplified.',
+      landingDescription: 'A modern control surface for reservoir status, IoT telemetry, and operator workflows.',
+      openDashboard: 'Open dashboard',
+      createAccount: 'Create account',
       welcome: 'Welcome',
       serverStatus: 'Server Status',
       systemStatus: 'System Status',
@@ -296,6 +300,10 @@ export const translations: Record<Language, any> = {
     home: {
       title: 'AroRano',
       subtitle: 'Platform Fanaraha-maso Rano Hendry',
+      landingTitle: 'Fanaraha-maso rano, natao tsotra.',
+      landingDescription: 'Takelaka maoderina hanaraha-maso ny satan\'ny reservoir, telemetry IoT, ary ny asan\'ny operators.',
+      openDashboard: 'Sokafy ny dashboard',
+      createAccount: 'Mamorona kaonty',
       welcome: 'Tongasoa',
       serverStatus: 'Toe-javatra Server',
       systemStatus: 'Toe-javatra Rafitra',
@@ -512,6 +520,10 @@ export const translations: Record<Language, any> = {
     home: {
       title: 'AroRano',
       subtitle: 'Platform fanaraha-maso rano hendry',
+      landingTitle: 'Fanaraha-maso rano, natao tsotra.',
+      landingDescription: 'Takelaka maoderina hanaraha-maso ny satan\'ny reservoir, telemetry IoT, ary ny asan\'ny operators.',
+      openDashboard: 'Sokafy ny dashboard',
+      createAccount: 'Mamorona kaonty',
       welcome: 'Tongasoa',
       serverStatus: 'Toe-javatra Server',
       systemStatus: 'Toe-javatra Rafitra',
