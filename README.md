@@ -245,8 +245,21 @@ Optional environment variables:
 
 - `CORS_ORIGINS` if you will call the backend from another frontend
 - `FRONTEND_URL` if you want the API root response to point to a public frontend URL
+- `ALLOW_VERCEL_ORIGINS=false` to disable automatic allowance of `*.vercel.app` origins
 
 The backend already supports `DATABASE_URL`, so it can connect to Render Postgres without any code changes during deploy. For Render Postgres, keep the connection string in `DATABASE_URL` and leave the local `DB_*` variables unset on the deployed service.
+
+### Vercel Frontend Deployment
+
+To deploy only the frontend on Vercel and connect it to your Render backend:
+
+1. Import this repository into Vercel.
+2. Set the project Root Directory to `frontend`.
+3. Keep framework preset as Next.js.
+4. Set Environment Variable `NEXT_PUBLIC_API_URL` to `https://arorano-backend.onrender.com`.
+5. Deploy.
+
+This repository also includes `frontend/.env.production` with the same backend URL, so production builds resolve to your Render API.
 
 ## �🔗 Access Points
 
@@ -385,6 +398,7 @@ npm run lint     # Run ESLint
 - `NODE_ENV` - Environment (development, production)
 - `PORT` - Server port
 - `DATABASE_URL` - Hosted Postgres connection string, preferred on Render
+- `ALLOW_VERCEL_ORIGINS` - Set to `false` to block automatic Vercel preview domain allowance
 - `DB_HOST` - PostgreSQL host
 - `DB_PORT` - PostgreSQL port
 - `DB_USERNAME` - Database username

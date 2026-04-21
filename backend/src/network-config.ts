@@ -20,21 +20,65 @@ function parseOrigins(value?: string): string[] {
   return origins.length ? origins : DEFAULT_CORS_ORIGINS;
 }
 
+function isVercelOrigin(origin: string): boolean {
+  try {
+    const url = new URL(origin);
+    return url.hostname.endsWith('.vercel.app');
+  } catch {
+    return false;
+  }
+}
+
 export function getAllowedOrigins(): string[] {
-  return parseOrigins(process.env.CORS_ORIGINS || process.env.FRONTEND_URL);
+  const sources = [process.env.CORS_ORIGINS, process.env.FRONTEND_URL]
+    .filter((value): value is string => Boolean(value?.trim()))
+    .join(',');
+
+  return parseOrigins(sources);
+}
+
+function isOriginAllowed(origin: string, allowedOrigins: string[]): boolean {
+  if (allowedOrigins.includes(origin)) {
+    return true;
+  }
+
+  // Allow Vercel deployment domains by default unless explicitly disabled.
+  const allowVercelOrigins = process.env.ALLOW_VERCEL_ORIGINS !== 'false';
+  return allowVercelOrigins && isVercelOrigin(origin);
+}
+
+function createCorsOriginValidator(allowedOrigins: string[]) {
+  return (origin: string | undefined, callback: (error: Error | null, allow?: boolean) => void) => {
+    // Allow non-browser clients that do not send an Origin header.
+    if (!origin) {
+      callback(null, true);
+      return;
+    }
+
+    if (isOriginAllowed(origin, allowedOrigins)) {
+      callback(null, true);
+      return;
+    }
+
+    callback(new Error(`CORS blocked origin: ${origin}`));
+  };
 }
 
 export function getHttpCorsOptions() {
+  const allowedOrigins = getAllowedOrigins();
+
   return {
-    origin: getAllowedOrigins(),
+    origin: createCorsOriginValidator(allowedOrigins),
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   };
 }
 
 export function getWebSocketCorsOptions() {
+  const allowedOrigins = getAllowedOrigins();
+
   return {
-    origin: getAllowedOrigins(),
+    origin: createCorsOriginValidator(allowedOrigins),
     credentials: true,
   };
 }
