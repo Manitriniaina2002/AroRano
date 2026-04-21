@@ -4,6 +4,21 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { getApiOrigin } from './runtime-config';
 
 const API_ORIGIN = getApiOrigin();
+const AUTH_BASE_PATHS = [`${API_ORIGIN}/auth`, `${API_ORIGIN}/api/auth`];
+
+async function fetchAuthEndpoint(path: string, init?: RequestInit): Promise<Response> {
+  let lastResponse: Response | null = null;
+
+  for (const basePath of AUTH_BASE_PATHS) {
+    const response = await fetch(`${basePath}/${path}`, init);
+    if (response.status !== 404) {
+      return response;
+    }
+    lastResponse = response;
+  }
+
+  return lastResponse as Response;
+}
 
 export interface AuthUser {
   id: string;
@@ -44,7 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const checkTokenValidity = async (authToken: string) => {
     try {
-      const response = await fetch(`${API_ORIGIN}/auth/profile`, {
+      const response = await fetchAuthEndpoint('profile', {
         headers: {
           Authorization: `Bearer ${authToken}`,
         },
@@ -67,7 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
-      const response = await fetch(`${API_ORIGIN}/auth/login`, {
+      const response = await fetchAuthEndpoint('login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -89,7 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = async (email: string, password: string, firstName?: string, lastName?: string) => {
     try {
-      const response = await fetch(`${API_ORIGIN}/auth/register`, {
+      const response = await fetchAuthEndpoint('register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password, firstName, lastName }),
@@ -119,7 +134,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!token) return null;
 
     try {
-      const response = await fetch(`${API_ORIGIN}/auth/profile`, {
+      const response = await fetchAuthEndpoint('profile', {
         headers: {
           Authorization: `Bearer ${token}`,
         },
