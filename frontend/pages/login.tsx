@@ -63,7 +63,6 @@ export default function LoginPage() {
                   unoptimized
                 />
               </div>
-              <p className="text-xs uppercase tracking-[0.28em] text-cyan-700/70 mb-2">AroRano</p>
               <CardTitle className="text-2xl sm:text-3xl font-bold text-gray-900">{t.common.login || 'Welcome Back'}</CardTitle>
               <CardDescription className="text-xs sm:text-sm">
                 {t.common.signIn || 'Sign in to your AroRano account'}

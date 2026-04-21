@@ -114,7 +114,6 @@ export default function RegisterPage() {
                   unoptimized
                 />
               </div>
-              <p className="text-xs uppercase tracking-[0.28em] text-cyan-700/70 mb-2">AroRano</p>
               <CardTitle className="text-lg sm:text-xl">{t.common.signUp || 'Sign Up'}</CardTitle>
               <CardDescription className="text-xs sm:text-sm">
                 {t.common.fillInDetails || 'Fill in your details to get started'}
