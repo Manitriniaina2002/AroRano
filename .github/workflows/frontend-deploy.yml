@@ -1,0 +1,136 @@
+name: Frontend CI/CD - Deploy to Vercel
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/frontend-deploy.yml'
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'frontend/**'
+
+env:
+  NODE_VERSION: '24'
+
+jobs:
+  test-and-build:
+    name: Test & Build Frontend
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: 'frontend/package-lock.json'
+      
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm install
+      
+      - name: Run linter (ESLint)
+        working-directory: frontend
+        run: npm run lint --if-present || true
+      
+      - name: Build project
+        working-directory: frontend
+        env:
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL || 'https://arorano-backend.onrender.com' }}
+        run: npm run build
+      
+      - name: Verify build output
+        working-directory: frontend
+        run: |
+          if [ ! -d ".next" ]; then
+            echo "Build failed: .next directory not found"
+            exit 1
+          fi
+          echo "✓ Build successful"
+      
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: next-build
+          path: frontend/.next
+          retention-days: 1
+
+  deploy-to-vercel:
+    name: Deploy to Vercel
+    runs-on: ubuntu-latest
+    needs: test-and-build
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Deploy to Vercel
+        uses: vercel/action@main
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          working-directory: frontend
+          scope: ${{ secrets.VERCEL_ORG_ID }}
+          prod: true
+      
+      - name: Post deployment notification
+        if: success()
+        run: |
+          echo "✓ Frontend successfully deployed to Vercel"
+          echo "Production URL: https://arorano.vercel.app"
+
+  preview-deployment:
+    name: Create Vercel Preview
+    runs-on: ubuntu-latest
+    needs: test-and-build
+    if: github.event_name == 'pull_request'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Deploy Preview to Vercel
+        uses: vercel/action@main
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          working-directory: frontend
+          scope: ${{ secrets.VERCEL_ORG_ID }}
+          prod: false
+      
+      - name: Post preview URL as comment
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const deployment = context.payload.deployment;
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '✨ Vercel preview deployment ready! Check the deployment details above.'
+            });
+
+  notify-failure:
+    name: Notify on Failure
+    runs-on: ubuntu-latest
+    needs: test-and-build
+    if: failure()
+    
+    steps:
+      - name: Report build failure
+        run: |
+          echo "❌ Frontend build failed"
+          echo "Please check the workflow logs for details"

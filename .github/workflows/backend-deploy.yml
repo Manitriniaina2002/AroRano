@@ -1,0 +1,105 @@
+name: Backend CI/CD - Deploy to Render
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-deploy.yml'
+      - 'docker-compose.yml'
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'backend/**'
+
+env:
+  NODE_VERSION: '22'
+
+jobs:
+  test-and-build:
+    name: Test & Build Backend
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: 'backend/package-lock.json'
+      
+      - name: Install dependencies
+        working-directory: backend
+        run: npm install --legacy-peer-deps --include=dev
+      
+      - name: Run linter (ESLint)
+        working-directory: backend
+        run: npm run lint --if-present || true
+      
+      - name: Build project
+        working-directory: backend
+        run: npm run build
+      
+      - name: Verify build output
+        working-directory: backend
+        run: |
+          if [ ! -d "dist" ]; then
+            echo "Build failed: dist directory not found"
+            exit 1
+          fi
+          echo "✓ Build successful"
+
+  deploy-to-render:
+    name: Deploy to Render
+    runs-on: ubuntu-latest
+    needs: test-and-build
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Trigger Render deployment
+        run: |
+          if [ -z "${{ secrets.RENDER_DEPLOY_HOOK_URL }}" ]; then
+            echo "⚠️ RENDER_DEPLOY_HOOK_URL not configured"
+            echo "Please add your Render deploy hook to GitHub Secrets"
+            exit 1
+          fi
+          
+          curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}" \
+            -H "Content-Type: application/json" \
+            -d "{\"message\": \"Deployment triggered by GitHub Actions\"}"
+          
+          echo "✓ Deployment hook triggered successfully"
+      
+      - name: Wait for deployment
+        run: |
+          echo "Waiting 30 seconds for Render to start deployment..."
+          sleep 30
+          echo "✓ Deployment initiated"
+      
+      - name: Post deployment notification
+        if: success()
+        run: |
+          echo "✓ Backend deployment triggered successfully"
+          echo "Check your Render dashboard for deployment status"
+
+  notify-failure:
+    name: Notify on Failure
+    runs-on: ubuntu-latest
+    needs: test-and-build
+    if: failure()
+    
+    steps:
+      - name: Report build failure
+        run: |
+          echo "❌ Backend build failed"
+          echo "Please check the workflow logs for details"

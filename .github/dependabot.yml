@@ -1,0 +1,44 @@
+version: 2
+updates:
+  # Backend Dependencies
+  - package-ecosystem: npm
+    directory: "/backend"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "03:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "MaZik"
+    allow:
+      - dependency-type: "all"
+    ignore:
+      # Ignore major version updates - review manually
+      - dependency-name: "typeorm"
+        update-types: ["version-update:semver-major"]
+
+  # Frontend Dependencies
+  - package-ecosystem: npm
+    directory: "/frontend"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "03:00"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "MaZik"
+    allow:
+      - dependency-type: "all"
+    ignore:
+      - dependency-name: "next"
+        update-types: ["version-update:semver-major"]
+
+  # GitHub Actions
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: tuesday
+      time: "03:00"
+    reviewers:
+      - "MaZik"
