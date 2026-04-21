@@ -20,7 +20,7 @@ export class AppService {
     return {
       service: 'AroRano API',
       status: 'ok',
-      message: 'Backend is running. Open the frontend on port 3000 for the web app.',
+      message: 'Backend is running. Open the configured frontend URL for the web app.',
       endpoints: links,
     };
   }

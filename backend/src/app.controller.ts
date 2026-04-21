@@ -3,6 +3,26 @@ import { ApiTags, ApiOperation, ApiOkResponse } from '@nestjs/swagger';
 import type { Request } from 'express';
 import { AppService, RootInfoResponse } from './app.service';
 
+function getFrontendUrl(requestUrl: URL): string {
+  const configuredFrontendUrl = process.env.FRONTEND_URL?.trim();
+
+  if (configuredFrontendUrl) {
+    try {
+      return new URL(configuredFrontendUrl).toString().replace(/\/$/, '');
+    } catch {
+      return configuredFrontendUrl.replace(/\/$/, '');
+    }
+  }
+
+  const frontendUrl = new URL(requestUrl.toString());
+  frontendUrl.port = '3000';
+  frontendUrl.pathname = '';
+  frontendUrl.search = '';
+  frontendUrl.hash = '';
+
+  return frontendUrl.toString().replace(/\/$/, '');
+}
+
 @ApiTags('health')
 @Controller()
 export class AppController {
@@ -18,18 +38,12 @@ export class AppController {
       : protocolHeader?.split(',')[0] || req.protocol || 'http';
     const host = req.headers.host || 'localhost:3001';
     const requestUrl = new URL(`${protocol}://${host}`);
-    const frontendUrl = new URL(requestUrl.toString());
-
-    frontendUrl.port = '3000';
-    frontendUrl.pathname = '';
-    frontendUrl.search = '';
-    frontendUrl.hash = '';
 
     return this.appService.getRootInfo({
       api: `${requestUrl.origin}/api`,
       health: `${requestUrl.origin}/api/health`,
       docs: `${requestUrl.origin}/api/docs`,
-      frontend: frontendUrl.toString().replace(/\/$/, ''),
+      frontend: getFrontendUrl(requestUrl),
     });
   }
 

@@ -27,8 +27,7 @@ export default function Home() {
                   <Image src="/images/logo.PNG" alt={t.common.logoAlt} width={288} height={288} className="h-full w-full rounded-[2.5rem] object-contain" unoptimized />
                 </div>
                 <div className="space-y-4">
-                  <p className="text-sm uppercase tracking-[0.32em] text-cyan-200/70">AroRano</p>
-                  <h1 className="text-5xl font-semibold tracking-tight text-white sm:text-6xl lg:text-7xl">{t.home.landingTitle}</h1>
+                  <h1 className="text-5xl font-semibold tracking-tight text-white sm:text-6xl lg:text-2xl">{t.home.landingTitle}</h1>
                   <p className="mx-auto max-w-2xl text-base leading-8 text-slate-300 sm:text-lg">
                     {t.home.landingDescription}
                   </p>

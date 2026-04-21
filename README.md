@@ -223,6 +223,18 @@ docker push username/arorano-backend:latest
 docker-compose up -d
 ```
 
+### Render Blueprint Deployment
+
+This repository includes a Render blueprint at [render.yaml](render.yaml). It defines:
+
+- a PostgreSQL database named `arorano-db`
+- a NestJS backend service named `arorano-backend`
+- a Next.js frontend service named `arorano-frontend`
+
+The blueprint wires the backend to the database with `DATABASE_URL`, generates `JWT_SECRET`, and sets the frontend and backend public URLs for production.
+
+To deploy on Render, create a new Blueprint from the repository root and let Render provision the services from [render.yaml](render.yaml).
+
 ## �🔗 Access Points
 
 - **Frontend:** http://localhost:3000

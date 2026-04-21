@@ -16,6 +16,8 @@ import { ScraperModule } from './scraper/scraper.module';
 import { ScrapingJob } from './scraper/scraper.entity';
 import { DatasetEntry } from './scraper/dataset-entry.entity';
 
+const databaseUrl = process.env.DATABASE_URL?.trim();
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -23,11 +25,15 @@ import { DatasetEntry } from './scraper/dataset-entry.entity';
     }),
     TypeOrmModule.forRoot({
       type: 'postgres',
-      host: process.env.DB_HOST || 'localhost',
-      port: parseInt(process.env.DB_PORT || '5432'),
-      username: process.env.DB_USERNAME || 'postgres',
-      password: process.env.DB_PASSWORD || 'postgres',
-      database: process.env.DB_NAME || 'arorano_iot',
+      ...(databaseUrl
+        ? { url: databaseUrl }
+        : {
+            host: process.env.DB_HOST || 'localhost',
+            port: parseInt(process.env.DB_PORT || '5432'),
+            username: process.env.DB_USERNAME || 'postgres',
+            password: process.env.DB_PASSWORD || 'postgres',
+            database: process.env.DB_NAME || 'arorano_iot',
+          }),
       entities: [Device, SensorReading, ESP32Reading, ESP32Command, User, ScrapingJob, DatasetEntry],
       synchronize: true, // Auto-sync schema in development
       logging: process.env.NODE_ENV === 'development',
