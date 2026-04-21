@@ -26,7 +26,10 @@ const databaseUrl = process.env.DATABASE_URL?.trim();
     TypeOrmModule.forRoot({
       type: 'postgres',
       ...(databaseUrl
-        ? { url: databaseUrl }
+        ? {
+            url: databaseUrl,
+            ssl: { rejectUnauthorized: false },
+          }
         : {
             host: process.env.DB_HOST || 'localhost',
             port: parseInt(process.env.DB_PORT || '5432'),
