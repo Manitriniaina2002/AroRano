@@ -233,7 +233,7 @@ To deploy only the backend and database on Render, create these two resources ma
 Recommended backend settings:
 
 - Root directory: `backend`
-- Build command: `npm install --legacy-peer-deps && npm run build`
+- Build command: `npm install --legacy-peer-deps --include=dev && npm run build`
 - Start command: `npm run start:prod`
 - Environment variables:
   - `NODE_ENV=production`
