@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useAuth } from '@/lib/AuthContext';
@@ -51,7 +52,18 @@ export default function LoginPage() {
         <div className="w-full max-w-md">
           {/* Login Form Card */}
           <Card className="border-2 border-cyan-100">
-            <CardHeader className="pb-3 sm:pb-4">
+            <CardHeader className="pb-3 sm:pb-4 flex flex-col items-center text-center">
+              <div className="relative h-20 w-20 sm:h-24 sm:w-24 rounded-[1.75rem] border border-cyan-100 bg-cyan-50 p-3 shadow-[0_18px_50px_rgba(34,211,238,0.16)] mb-3">
+                <Image
+                  src="/images/logo.PNG"
+                  alt={t.common.logoAlt || 'AroRano logo'}
+                  width={96}
+                  height={96}
+                  className="h-full w-full object-contain"
+                  unoptimized
+                />
+              </div>
+              <p className="text-xs uppercase tracking-[0.28em] text-cyan-700/70 mb-2">AroRano</p>
               <CardTitle className="text-2xl sm:text-3xl font-bold text-gray-900">{t.common.login || 'Welcome Back'}</CardTitle>
               <CardDescription className="text-xs sm:text-sm">
                 {t.common.signIn || 'Sign in to your AroRano account'}
