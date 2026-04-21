@@ -67,6 +67,16 @@ function alertBadgeVariant(alert?: string | null): 'success' | 'warning' | 'dest
   return 'default';
 }
 
+function clampPercent(value?: number | null) {
+  return Math.min(Math.max(value ?? 0, 0), 100);
+}
+
+function reservoirState(percent: number) {
+  if (percent >= 80) return { label: 'Optimal', tone: 'text-emerald-700', chip: 'bg-emerald-100 text-emerald-800' };
+  if (percent >= 40) return { label: 'Normal', tone: 'text-cyan-700', chip: 'bg-cyan-100 text-cyan-800' };
+  return { label: 'Low', tone: 'text-amber-700', chip: 'bg-amber-100 text-amber-800' };
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const { user } = useAuth();
@@ -196,6 +206,8 @@ export default function DashboardPage() {
   const activeSnapshot = snapshots.find((snapshot) => snapshot.deviceId === selectedDeviceId) ?? null;
   const latestReading = selectedLatest ?? activeSnapshot?.latest ?? null;
   const latestPercent = latestReading?.waterLevelPercent ?? 0;
+  const clampedLatestPercent = clampPercent(latestPercent);
+  const levelState = reservoirState(clampedLatestPercent);
   const totalReadings = selectedStats?.totalReadings ?? selectedHistory.length;
   const connectedDevices = snapshots.filter((snapshot) => snapshot.latest).length;
   const criticalDevices = snapshots.filter((snapshot) => snapshot.latest?.alert?.toUpperCase() === 'CRITICAL').length;
@@ -364,21 +376,39 @@ export default function DashboardPage() {
                   </div>
 
                   <div className="mt-4 rounded-3xl border border-slate-200 bg-gradient-to-b from-cyan-50 to-blue-100 p-4">
-                    <div className="flex items-end justify-between gap-4">
+                    <div className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-end">
                       <div>
-                        <p className="text-xs font-medium uppercase tracking-[0.18em] text-cyan-700">Water level</p>
-                        <p className="mt-1 text-4xl font-semibold text-slate-900">{Math.round(latestPercent)}%</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs font-medium uppercase tracking-[0.18em] text-cyan-700">Reservoir level</p>
+                          <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${levelState.chip}`}>{levelState.label}</span>
+                        </div>
+                        <p className="mt-1 text-4xl font-semibold text-slate-900">{Math.round(clampedLatestPercent)}%</p>
+                        <div className="mt-2 text-sm text-slate-600">
+                          <p>{selectedLatest?.waterLevelCm?.toFixed(1) ?? latestReading?.waterLevelCm?.toFixed(1) ?? 'n/a'} cm</p>
+                          <p>{latestReading?.rainDetected ? 'Rain detected' : 'Dry conditions'}</p>
+                        </div>
+
+                        <div className="mt-4 h-3 overflow-hidden rounded-full bg-white/70">
+                          <div
+                            className="h-full rounded-full bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-500 transition-all duration-500"
+                            style={{ width: `${clampedLatestPercent}%` }}
+                          />
+                        </div>
                       </div>
-                      <div className="text-right text-sm text-slate-600">
-                        <p>{selectedLatest?.waterLevelCm?.toFixed(1) ?? latestReading?.waterLevelCm?.toFixed(1) ?? 'n/a'} cm</p>
-                        <p>{latestReading?.rainDetected ? 'Rain detected' : 'Dry conditions'}</p>
+
+                      <div className="mx-auto sm:mx-0">
+                        <div className="relative h-48 w-28 overflow-hidden rounded-t-[2.2rem] rounded-b-2xl border-4 border-slate-200 bg-white/80 shadow-inner">
+                          <div
+                            className="absolute bottom-0 left-0 right-0 overflow-hidden bg-gradient-to-t from-cyan-600 via-cyan-500 to-blue-400 transition-all duration-700"
+                            style={{ height: `${Math.max(clampedLatestPercent, 6)}%` }}
+                          >
+                            <div className="reservoir-wave reservoir-wave-1 absolute -left-4 right-[-20%] top-[-8px] h-5 bg-white/45" />
+                            <div className="reservoir-wave reservoir-wave-2 absolute -left-6 right-[-18%] top-[-10px] h-6 bg-cyan-200/55" />
+                          </div>
+                          <div className="absolute inset-y-2 left-2 w-[2px] rounded bg-slate-300/70" />
+                        </div>
+                        <p className={`mt-2 text-center text-xs font-semibold uppercase tracking-[0.14em] ${levelState.tone}`}>Reservoir</p>
                       </div>
-                    </div>
-                    <div className="mt-4 h-3 overflow-hidden rounded-full bg-white/70">
-                      <div
-                        className="h-full rounded-full bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-500 transition-all duration-500"
-                        style={{ width: `${Math.min(Math.max(latestPercent, 0), 100)}%` }}
-                      />
                     </div>
                   </div>
                 </CardContent>
