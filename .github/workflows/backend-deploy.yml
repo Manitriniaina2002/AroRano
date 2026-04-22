@@ -41,7 +41,12 @@ jobs:
       
       - name: Run linter (ESLint)
         working-directory: backend
-        run: npm run lint --if-present || true
+        run: |
+          if [ -f "eslint.config.js" ] || [ -f "eslint.config.mjs" ] || [ -f "eslint.config.cjs" ] || [ -f ".eslintrc" ] || [ -f ".eslintrc.js" ] || [ -f ".eslintrc.cjs" ] || [ -f ".eslintrc.json" ] || [ -f ".eslintrc.yaml" ] || [ -f ".eslintrc.yml" ]; then
+            npm run lint --if-present
+          else
+            echo "No ESLint config found in backend, skipping lint"
+          fi
       
       - name: Build project
         working-directory: backend

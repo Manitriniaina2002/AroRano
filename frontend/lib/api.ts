@@ -350,6 +350,16 @@ export const api = {
       return response.data;
     },
 
+    startPump: async (deviceId: string, payload: CreateESP32CommandInput = {}): Promise<ESP32Command> => {
+      const response = await apiClient.post<ESP32Command>(`/api/esp32/devices/${deviceId}/pump/start`, payload);
+      return response.data;
+    },
+
+    stopPump: async (deviceId: string, payload: CreateESP32CommandInput = {}): Promise<ESP32Command> => {
+      const response = await apiClient.post<ESP32Command>(`/api/esp32/devices/${deviceId}/pump/stop`, payload);
+      return response.data;
+    },
+
     getLatestCommand: async (deviceId: string): Promise<ESP32Command | null> => {
       const response = await apiClient.get<ESP32Command | null>(`/api/esp32/devices/${deviceId}/commands/latest`);
       return response.data;

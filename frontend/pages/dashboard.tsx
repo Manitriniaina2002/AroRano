@@ -131,6 +131,8 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [sendingFillCommand, setSendingFillCommand] = useState(false);
+  const [sendingStartCommand, setSendingStartCommand] = useState(false);
+  const [sendingStopCommand, setSendingStopCommand] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const loadSelectedDevice = async (deviceId: string, showSpinner = false) => {
@@ -318,6 +320,46 @@ export default function DashboardPage() {
     }
   };
 
+  const handleStartPump = async () => {
+    if (!selectedDeviceId) return;
+
+    try {
+      setSendingStartCommand(true);
+      const command = await api.esp32.startPump(selectedDeviceId, {
+        notes: t.dashboard.startPump,
+        requestedBy: user?.email ?? undefined,
+      });
+      setSelectedCommand(command);
+      toast.success(t.dashboard.commandSentStart);
+      await loadSelectedDevice(selectedDeviceId, true);
+    } catch (startError) {
+      const message = startError instanceof Error ? startError.message : t.dashboard.commandFailedStart;
+      toast.error(message);
+    } finally {
+      setSendingStartCommand(false);
+    }
+  };
+
+  const handleStopPump = async () => {
+    if (!selectedDeviceId) return;
+
+    try {
+      setSendingStopCommand(true);
+      const command = await api.esp32.stopPump(selectedDeviceId, {
+        notes: t.dashboard.stopPump,
+        requestedBy: user?.email ?? undefined,
+      });
+      setSelectedCommand(command);
+      toast.success(t.dashboard.commandSentStop);
+      await loadSelectedDevice(selectedDeviceId, true);
+    } catch (stopError) {
+      const message = stopError instanceof Error ? stopError.message : t.dashboard.commandFailedStop;
+      toast.error(message);
+    } finally {
+      setSendingStopCommand(false);
+    }
+  };
+
   return (
     <ProtectedRoute>
       <Layout>
@@ -453,10 +495,27 @@ export default function DashboardPage() {
                     </div>
                   </div>
 
-                    <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                      <Button
+                        onClick={handleStartPump}
+                        disabled={!selectedDeviceId || loading || refreshing || sendingStartCommand || sendingStopCommand || sendingFillCommand}
+                        className="h-11 rounded-2xl gap-2"
+                      >
+                        <FiZap className={sendingStartCommand ? 'h-4 w-4 animate-pulse' : 'h-4 w-4'} />
+                        {sendingStartCommand ? t.dashboard.startingPump : t.dashboard.startPump}
+                      </Button>
+                      <Button
+                        onClick={handleStopPump}
+                        disabled={!selectedDeviceId || loading || refreshing || sendingStopCommand || sendingStartCommand || sendingFillCommand}
+                        variant="destructive"
+                        className="h-11 rounded-2xl gap-2"
+                      >
+                        <FiZap className={sendingStopCommand ? 'h-4 w-4 animate-pulse' : 'h-4 w-4'} />
+                        {sendingStopCommand ? t.dashboard.stoppingPump : t.dashboard.stopPump}
+                      </Button>
                       <Button
                         onClick={handleFillReservoir}
-                        disabled={!selectedDeviceId || loading || refreshing || sendingFillCommand}
+                        disabled={!selectedDeviceId || loading || refreshing || sendingFillCommand || sendingStartCommand || sendingStopCommand}
                         className="h-11 rounded-2xl gap-2"
                       >
                         <FiTool className={sendingFillCommand ? 'h-4 w-4 animate-pulse' : 'h-4 w-4'} />

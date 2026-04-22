@@ -159,6 +159,34 @@ export class ESP32Controller {
   }
 
   /**
+   * Send pump start command
+   * POST /api/esp32/devices/:deviceId/pump/start
+   */
+  @Post('devices/:deviceId/pump/start')
+  @ApiOperation({ summary: 'Send pump start command to device' })
+  @ApiOkResponse({ type: ESP32CommandResponseDto })
+  async startPump(
+    @Param('deviceId') deviceId: string,
+    @Body() dto: CreateESP32CommandDto,
+  ) {
+    return await this.esp32Service.requestPumpStart(deviceId, dto.requestedBy, dto.notes);
+  }
+
+  /**
+   * Send pump stop command
+   * POST /api/esp32/devices/:deviceId/pump/stop
+   */
+  @Post('devices/:deviceId/pump/stop')
+  @ApiOperation({ summary: 'Send pump stop command to device' })
+  @ApiOkResponse({ type: ESP32CommandResponseDto })
+  async stopPump(
+    @Param('deviceId') deviceId: string,
+    @Body() dto: CreateESP32CommandDto,
+  ) {
+    return await this.esp32Service.requestPumpStop(deviceId, dto.requestedBy, dto.notes);
+  }
+
+  /**
    * Get latest command for a device
    * GET /api/esp32/devices/:deviceId/commands/latest
    */
@@ -249,6 +277,8 @@ export class ESP32Controller {
         getReadingsByRange: 'GET /api/esp32/devices/:deviceId/readings/range',
         getStats: 'GET /api/esp32/devices/:deviceId/stats',
         fillReservoir: 'POST /api/esp32/devices/:deviceId/fill',
+        startPump: 'POST /api/esp32/devices/:deviceId/pump/start',
+        stopPump: 'POST /api/esp32/devices/:deviceId/pump/stop',
         getLatestCommand: 'GET /api/esp32/devices/:deviceId/commands/latest',
         getCommands: 'GET /api/esp32/devices/:deviceId/commands',
         acknowledgeCommand: 'PATCH /api/esp32/devices/:deviceId/commands/:commandId',

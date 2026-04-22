@@ -33,7 +33,12 @@ jobs:
       
       - name: Run ESLint
         working-directory: backend
-        run: npm run lint --if-present || echo "No lint script configured"
+        run: |
+          if [ -f "eslint.config.js" ] || [ -f "eslint.config.mjs" ] || [ -f "eslint.config.cjs" ] || [ -f ".eslintrc" ] || [ -f ".eslintrc.js" ] || [ -f ".eslintrc.cjs" ] || [ -f ".eslintrc.json" ] || [ -f ".eslintrc.yaml" ] || [ -f ".eslintrc.yml" ]; then
+            npm run lint --if-present
+          else
+            echo "No ESLint config found in backend, skipping lint"
+          fi
 
   lint-frontend:
     name: Lint Frontend Code
@@ -56,7 +61,12 @@ jobs:
       
       - name: Run ESLint
         working-directory: frontend
-        run: npm run lint --if-present || echo "No lint script configured"
+        run: |
+          if [ -f "eslint.config.js" ] || [ -f "eslint.config.mjs" ] || [ -f "eslint.config.cjs" ] || [ -f ".eslintrc" ] || [ -f ".eslintrc.js" ] || [ -f ".eslintrc.cjs" ] || [ -f ".eslintrc.json" ] || [ -f ".eslintrc.yaml" ] || [ -f ".eslintrc.yml" ]; then
+            npm run lint --if-present
+          else
+            echo "No ESLint config found in frontend, skipping lint"
+          fi
 
   type-check-backend:
     name: Type Check Backend (TypeScript)

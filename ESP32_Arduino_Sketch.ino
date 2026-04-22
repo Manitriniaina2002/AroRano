@@ -1,23 +1,22 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <DHT.h>
-#include <Wire.h>
-#include <LiquidCrystal_I2C.h>  // ESP32 compatible version
+#include <WiFiClientSecure.h>
 
 // ===== WIFI =====
 const char* ssid = "123";
 const char* password = "Allaccess     ";
 
 // ===== SERVER =====
-const char* serverName = "http://192.168.88.16:3001/api/esp32/data";
+const char* serverName = "https://arorano-backend.onrender.com/api/esp32/data";
+const char* commandEndpoint = "https://arorano-backend.onrender.com/api/esp32/devices/reservoir_01/commands/latest";
+const char* commandAckPrefix = "https://arorano-backend.onrender.com/api/esp32/devices/reservoir_01/commands/";
+const char* deviceId = "reservoir_01";
 
 // ===== DHT22 SENSOR =====
 #define DHTPIN 4
 #define DHTTYPE DHT22
 DHT dht(DHTPIN, DHTTYPE);
-
-// ===== LCD DISPLAY =====
-LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 // ===== GPIO PINS =====
 #define TRIG 5
@@ -30,16 +29,155 @@ LiquidCrystal_I2C lcd(0x27, 16, 2);
 #define BUTTON 32
 #define RAIN 34
 
+// Most relay modules for ESP32 are active-low: LOW = pump ON, HIGH = pump OFF.
+const uint8_t RELAY_ACTIVE_LEVEL = LOW;
+const uint8_t RELAY_INACTIVE_LEVEL = HIGH;
+
 // ===== GLOBAL VARIABLES =====
 float waterLevelPercent = 0.0;
 bool pumpState = false;
+bool manualPumpOverride = false;
+bool manualPumpTarget = false;
+unsigned long manualOverrideUntil = 0;
+String lastProcessedCommandId = "";
 
 // ===== CONFIGURATION =====
 // Calibration: measure distance at EMPTY and FULL states
-float emptyDistance = 6.1;        // cm - Distance reading when tank is EMPTY
-float fullDistance = 56.0;        // cm - Distance reading when tank is FULL (adjust based on actual)
+float fullDistance = 6.1;         // cm - Distance reading when tank is FULL
+float emptyDistance = 56.0;       // cm - Distance reading when tank is EMPTY (adjust based on actual)
 float lowThreshold = 30.0;        // % - Pump ON threshold
 float highThreshold = 80.0;       // % - Pump OFF threshold
+
+void setPumpState(bool isOn) {
+  digitalWrite(RELAY, isOn ? RELAY_ACTIVE_LEVEL : RELAY_INACTIVE_LEVEL);
+  pumpState = isOn;
+}
+
+void syncPumpStateFromRelay() {
+  int relayOutput = digitalRead(RELAY);
+  pumpState = (relayOutput == RELAY_ACTIVE_LEVEL);
+}
+
+String extractJsonString(const String& payload, const String& key) {
+  String token = "\"" + key + "\":\"";
+  int start = payload.indexOf(token);
+  if (start < 0) return "";
+  start += token.length();
+  int end = payload.indexOf('"', start);
+  if (end < 0) return "";
+  return payload.substring(start, end);
+}
+
+long extractJsonLong(const String& payload, const String& key, long defaultValue = 0) {
+  String token = "\"" + key + "\":";
+  int start = payload.indexOf(token);
+  if (start < 0) return defaultValue;
+  start += token.length();
+
+  while (start < payload.length() && payload[start] == ' ') {
+    start++;
+  }
+
+  int end = start;
+  while (end < payload.length() && isDigit(payload[end])) {
+    end++;
+  }
+
+  if (end == start) return defaultValue;
+  return payload.substring(start, end).toInt();
+}
+
+void acknowledgeCommand(const String& commandId, const char* status, const char* errorMessage = "") {
+  if (WiFi.status() != WL_CONNECTED || commandId.length() == 0) {
+    return;
+  }
+
+  WiFiClientSecure client;
+  client.setInsecure();
+
+  HTTPClient http;
+  String ackUrl = String(commandAckPrefix) + commandId;
+  http.begin(client, ackUrl);
+  http.addHeader("Content-Type", "application/json");
+
+  String body = String("{\"status\":\"") + status + "\"";
+  if (strlen(errorMessage) > 0) {
+    body += String(",\"errorMessage\":\"") + errorMessage + "\"";
+  }
+  body += "}";
+
+  int httpCode = http.sendRequest("PATCH", body);
+  Serial.print("Command ACK HTTP Status: ");
+  Serial.println(httpCode);
+  http.end();
+}
+
+void processRemoteCommand() {
+  if (WiFi.status() != WL_CONNECTED) {
+    return;
+  }
+
+  WiFiClientSecure client;
+  client.setInsecure();
+
+  HTTPClient http;
+  http.begin(client, commandEndpoint);
+  http.setConnectTimeout(5000);
+  http.setTimeout(5000);
+
+  int httpCode = http.GET();
+  if (httpCode != 200) {
+    http.end();
+    return;
+  }
+
+  String payload = http.getString();
+  http.end();
+
+  if (payload.length() == 0 || payload == "null") {
+    return;
+  }
+
+  String status = extractJsonString(payload, "status");
+  if (status != "pending") {
+    return;
+  }
+
+  String commandId = extractJsonString(payload, "id");
+  String commandType = extractJsonString(payload, "commandType");
+
+  if (commandId.length() == 0 || commandType.length() == 0 || commandId == lastProcessedCommandId) {
+    return;
+  }
+
+  Serial.print("Executing command: ");
+  Serial.println(commandType);
+
+  if (commandType == "PUMP_START") {
+    manualPumpOverride = true;
+    manualPumpTarget = true;
+    manualOverrideUntil = 0;
+    setPumpState(true);
+    acknowledgeCommand(commandId, "executed");
+  } else if (commandType == "PUMP_STOP") {
+    manualPumpOverride = true;
+    manualPumpTarget = false;
+    manualOverrideUntil = 0;
+    setPumpState(false);
+    acknowledgeCommand(commandId, "executed");
+  } else if (commandType == "FILL_RESERVOIR") {
+    long durationSeconds = extractJsonLong(payload, "durationSeconds", 60);
+    manualPumpOverride = true;
+    manualPumpTarget = true;
+    manualOverrideUntil = millis() + (unsigned long)durationSeconds * 1000UL;
+    setPumpState(true);
+    acknowledgeCommand(commandId, "executed");
+  } else {
+    acknowledgeCommand(commandId, "failed", "Unsupported command type");
+  }
+
+  lastProcessedCommandId = commandId;
+}
 
 void setup() {
   Serial.begin(115200);
@@ -57,11 +195,11 @@ void setup() {
   pinMode(BUTTON, INPUT_PULLUP);
   pinMode(RAIN, INPUT);
 
+  // Ensure known startup state for relay-controlled pump.
+  setPumpState(false);
+
   // Initialize sensors
   dht.begin();
-  lcd.init();
-  lcd.backlight();
-  lcd.print("Starting...");
 
   // Connect to WiFi
   WiFi.begin(ssid, password);
@@ -105,11 +243,9 @@ float readUltrasonic() {
 void controlSystem(float levelPercent, bool rainDetected) {
   // Pump control logic
   if (levelPercent < lowThreshold && !rainDetected) {
-    digitalWrite(RELAY, HIGH);
-    pumpState = true;
+    setPumpState(true);
   } else if (levelPercent > highThreshold) {
-    digitalWrite(RELAY, LOW);
-    pumpState = false;
+    setPumpState(false);
   }
 
   // LED status indicators
@@ -130,8 +266,14 @@ void sendData(float temp, float hum, bool rain, float distanceCm) {
     return;
   }
 
+  // Keep reported status aligned with real relay output state.
+  syncPumpStateFromRelay();
+
+  WiFiClientSecure client;
+  client.setInsecure();
+
   HTTPClient http;
-  http.begin(serverName);
+  http.begin(client, serverName);
   http.addHeader("Content-Type", "application/json");
   http.setConnectTimeout(5000);
   http.setTimeout(5000);
@@ -147,7 +289,7 @@ void sendData(float temp, float hum, bool rain, float distanceCm) {
   // Build JSON payload with proper escaping
   char json[512];
   snprintf(json, sizeof(json),
-    "{\"device_id\":\"reservoir_01\","
+    "{\"device_id\":\"%s\","
     "\"water_level_cm\":%.1f,"
     "\"water_level_percent\":%.0f,"
     "\"temperature\":%.1f,"
@@ -155,6 +297,7 @@ void sendData(float temp, float hum, bool rain, float distanceCm) {
     "\"rain_detected\":%s,"
     "\"pump_status\":\"%s\","
     "\"alert\":\"%s\"}",
+    deviceId,
     distanceCm,
     waterLevelPercent,
     temp,
@@ -183,46 +326,14 @@ void sendData(float temp, float hum, bool rain, float distanceCm) {
   http.end();
 }
 
-// ===== GET RESERVOIR STATUS =====
-const char* getReservoirStatus() {
-  if (waterLevelPercent > 80.0) {
-    return "OPTIMAL";
-  } else if (waterLevelPercent > 30.0) {
-    return "NORMAL";
-  } else {
-    return "LOW";
-  }
-}
-
-// ===== LCD DISPLAY UPDATE =====
-void displayLCD(float temp, float hum) {
-  lcd.clear();
-  
-  // Line 1: Water level and status
-  lcd.setCursor(0, 0);
-  lcd.print("Lvl:");
-  if (waterLevelPercent < 10) lcd.print(" ");
-  lcd.print((int)waterLevelPercent);
-  lcd.print("% ");
-  lcd.print(getReservoirStatus());
-
-  // Line 2: Temperature and Humidity
-  lcd.setCursor(0, 1);
-  lcd.print("T:");
-  lcd.print((int)temp);
-  lcd.print("C H:");
-  lcd.print((int)hum);
-  lcd.print("%");
-}
-
 // ===== MAIN LOOP =====
 void loop() {
   // Read all sensors
   float distance = readUltrasonic();
   
   // Calculate water level percentage using two-point calibration
-  // Sensor is closer when water is HIGH (6cm = 100% full)
-  // Sensor is farther when water is LOW (56cm = 0% empty)
+  // Sensor is closer when water is HIGH (fullDistance = 100%)
+  // Sensor is farther when water is LOW (emptyDistance = 0%)
   // Formula: percent = ((emptyDistance - distance) / (emptyDistance - fullDistance)) * 100
   float tankRange = emptyDistance - fullDistance;
   waterLevelPercent = ((emptyDistance - distance) / tankRange) * 100.0;
@@ -242,11 +353,29 @@ void loop() {
     return;
   }
 
+  // Pull and execute operator commands from dashboard/backend.
+  processRemoteCommand();
+
+  // Safety guard: always stop pump when reservoir is at/above high threshold.
+  if (waterLevelPercent >= highThreshold) {
+    setPumpState(false);
+    manualPumpOverride = false;
+    manualOverrideUntil = 0;
+  }
+
+  if (manualPumpOverride) {
+    if (manualOverrideUntil > 0 && millis() > manualOverrideUntil) {
+      manualPumpOverride = false;
+      manualOverrideUntil = 0;
+    } else {
+      setPumpState(manualPumpTarget);
+    }
+  }
+
   // Execute control logic
-  controlSystem(waterLevelPercent, rainDetected);
-  
-  // Update displays
-  displayLCD(temperature, humidity);
+  if (!manualPumpOverride) {
+    controlSystem(waterLevelPercent, rainDetected);
+  }
   
   // Send data to server
   sendData(temperature, humidity, rainDetected, distance);
@@ -266,5 +395,5 @@ void loop() {
   Serial.println(pumpState ? "ON" : "OFF");
 
   // Wait before next reading
-  delay(10000);  // 10 second interval
+  delay(5000);  // 5 second interval
 }

@@ -185,6 +185,34 @@ export class ESP32Service {
     durationSeconds?: number,
     notes?: string,
   ): Promise<ESP32Command> {
+    return this.createPumpCommand(
+      deviceId,
+      'FILL_RESERVOIR',
+      'fill_reservoir',
+      'ON',
+      requestedBy,
+      durationSeconds,
+      notes,
+    );
+  }
+
+  async requestPumpStart(deviceId: string, requestedBy?: string, notes?: string): Promise<ESP32Command> {
+    return this.createPumpCommand(deviceId, 'PUMP_START', 'start_pump', 'ON', requestedBy, undefined, notes);
+  }
+
+  async requestPumpStop(deviceId: string, requestedBy?: string, notes?: string): Promise<ESP32Command> {
+    return this.createPumpCommand(deviceId, 'PUMP_STOP', 'stop_pump', 'OFF', requestedBy, undefined, notes);
+  }
+
+  private async createPumpCommand(
+    deviceId: string,
+    commandType: string,
+    action: string,
+    targetPumpStatus: 'ON' | 'OFF',
+    requestedBy?: string,
+    durationSeconds?: number,
+    notes?: string,
+  ): Promise<ESP32Command> {
     const latestReading = await this.getLatestReading(deviceId);
 
     if (!latestReading) {
@@ -193,11 +221,11 @@ export class ESP32Service {
 
     const command = this.esp32CommandRepository.create({
       deviceId,
-      commandType: 'FILL_RESERVOIR',
+      commandType,
       status: 'pending',
       parameters: {
-        action: 'fill_reservoir',
-        targetPumpStatus: 'ON',
+        action,
+        targetPumpStatus,
         durationSeconds: durationSeconds ?? null,
       },
       notes: notes ?? null,
