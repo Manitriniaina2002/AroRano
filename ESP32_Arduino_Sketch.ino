@@ -29,9 +29,11 @@ DHT dht(DHTPIN, DHTTYPE);
 #define BUTTON 32
 #define RAIN 34
 
-// Most relay modules for ESP32 are active-low: LOW = pump ON, HIGH = pump OFF.
-const uint8_t RELAY_ACTIVE_LEVEL = LOW;
-const uint8_t RELAY_INACTIVE_LEVEL = HIGH;
+// Relay polarity depends on module wiring.
+// For the current setup, HIGH energizes the relay (pump ON) and LOW de-energizes it (pump OFF).
+// If your relay behaves opposite, swap these two constants.
+const uint8_t RELAY_ACTIVE_LEVEL = HIGH;
+const uint8_t RELAY_INACTIVE_LEVEL = LOW;
 
 // ===== GLOBAL VARIABLES =====
 float waterLevelPercent = 0.0;
@@ -43,8 +45,8 @@ String lastProcessedCommandId = "";
 
 // ===== CONFIGURATION =====
 // Calibration: measure distance at EMPTY and FULL states
-float fullDistance = 6.1;         // cm - Distance reading when tank is FULL
-float emptyDistance = 56.0;       // cm - Distance reading when tank is EMPTY (adjust based on actual)
+float fullDistance = 1.0;         // cm - Distance reading when tank is FULL
+float emptyDistance = 6.1;       // cm - Distance reading when tank is EMPTY (adjust based on actual)
 float lowThreshold = 30.0;        // % - Pump ON threshold
 float highThreshold = 80.0;       // % - Pump OFF threshold
 
