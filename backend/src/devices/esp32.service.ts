@@ -241,6 +241,18 @@ export class ESP32Service {
   }
 
   async getLatestCommand(deviceId: string): Promise<ESP32Command | null> {
+    // Device polling should always receive actionable work first.
+    // If there is any pending command, return the newest pending one;
+    // otherwise fall back to the most recent command for dashboard display.
+    const pendingCommand = await this.esp32CommandRepository.findOne({
+      where: { deviceId, status: 'pending' },
+      order: { createdAt: 'DESC' },
+    });
+
+    if (pendingCommand) {
+      return pendingCommand;
+    }
+
     return this.esp32CommandRepository.findOne({
       where: { deviceId },
       order: { createdAt: 'DESC' },
